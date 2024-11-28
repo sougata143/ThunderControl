@@ -24,7 +24,6 @@ module.exports = {
       permissions: ["INTERNET"]
     },
     plugins: [
-      "@react-native-google-signin/google-signin",
       "expo-dev-client"
     ],
     scheme: "thundercontrol",

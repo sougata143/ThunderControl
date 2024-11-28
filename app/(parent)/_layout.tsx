@@ -26,6 +26,7 @@ export default function ParentLayout() {
         },
       }}
     >
+      {/* Main Dashboard */}
       <Stack.Screen
         name="dashboard"
         options={{
@@ -33,17 +34,79 @@ export default function ParentLayout() {
           headerLargeTitle: true,
         }}
       />
+
+      {/* Device Management */}
+      <Stack.Screen
+        name="devices/index"
+        options={{
+          title: 'Managed Devices',
+          headerLargeTitle: true,
+        }}
+      />
+      <Stack.Screen
+        name="devices/[id]/index"
+        options={{
+          title: 'Device Details',
+          headerLargeTitle: true,
+        }}
+      />
+      <Stack.Screen
+        name="add-device/index"
+        options={{
+          title: 'Add New Device',
+          presentation: 'modal',
+        }}
+      />
+
+      {/* Monitoring & Reports */}
       <Stack.Screen
         name="activities"
         options={{
           title: 'Activities',
-          presentation: 'modal',
+          headerLargeTitle: true,
         }}
       />
       <Stack.Screen
-        name="restrictions"
+        name="location-tracking"
         options={{
-          title: 'Restrictions',
+          title: 'Location Tracking',
+          headerLargeTitle: true,
+        }}
+      />
+      <Stack.Screen
+        name="call-logs"
+        options={{
+          title: 'Call Records',
+          headerLargeTitle: true,
+        }}
+      />
+      <Stack.Screen
+        name="messages"
+        options={{
+          title: 'Messages',
+          headerLargeTitle: true,
+        }}
+      />
+      <Stack.Screen
+        name="reports/index"
+        options={{
+          title: 'Reports',
+          headerLargeTitle: true,
+        }}
+      />
+      <Stack.Screen
+        name="reports/[type]"
+        options={{
+          title: 'Report Details',
+          headerLargeTitle: true,
+        }}
+      />
+
+      {/* Settings & Profile */}
+      <Stack.Screen
+        name="settings"
+        options={{
+          title: 'Settings',
           presentation: 'modal',
         }}
       />
@@ -55,44 +118,9 @@ export default function ParentLayout() {
         }}
       />
       <Stack.Screen
-        name="device-monitoring"
+        name="restrictions"
         options={{
-          title: 'Device Monitoring',
-          presentation: 'modal',
-        }}
-      />
-      <Stack.Screen
-        name="location-tracking"
-        options={{
-          title: 'Location Tracking',
-          presentation: 'modal',
-        }}
-      />
-      <Stack.Screen
-        name="communication"
-        options={{
-          title: 'Communication',
-          presentation: 'modal',
-        }}
-      />
-      <Stack.Screen
-        name="settings"
-        options={{
-          title: 'Settings',
-          presentation: 'modal',
-        }}
-      />
-      <Stack.Screen
-        name="add-child"
-        options={{
-          title: 'Add Child Device',
-          presentation: 'modal',
-        }}
-      />
-      <Stack.Screen
-        name="monitoring-report"
-        options={{
-          title: 'Monitoring Report',
+          title: 'Restrictions',
           presentation: 'modal',
         }}
       />

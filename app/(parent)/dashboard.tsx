@@ -63,7 +63,11 @@ export default function ParentDashboard() {
   ];
 
   const handleDevicePress = (deviceId: string) => {
-    router.push(`/parent/device-monitoring?deviceId=${deviceId}`);
+    router.push(`/devices/${deviceId}`);
+  };
+
+  const handleAddDevice = () => {
+    router.push('/add-device');
   };
 
   const handleActivityPress = (activityId: string) => {

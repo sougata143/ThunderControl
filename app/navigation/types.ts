@@ -19,6 +19,11 @@ declare global {
       'parent/add-child': undefined;
       'parent/monitoring-report': undefined;
       
+      // Device routes
+      'devices': undefined;
+      'devices/[id]': { id: string };
+      'add-device': undefined;
+      
       // Child routes
       'child/home': undefined;
       'child/activities': undefined;
