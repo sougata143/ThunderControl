@@ -14,6 +14,8 @@
 		96905EF65AED1B983A6B3ABC /* libPods-ThunderControl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 58EEBF8E8E6FB1BC6CAF49B5 /* libPods-ThunderControl.a */; };
 		B18059E884C0ABDD17F3DC3D /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAC715A2D49A985799AEE119 /* ExpoModulesProvider.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
+		3E8628F6F3A84FB897B85084 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 60C8A38891444074A1B844C9 /* GoogleService-Info.plist */; };
+		41FACA5DF81B49BF954D9658 /* noop-file.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C6E7E730C794B0A92A0554B /* noop-file.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -30,6 +32,9 @@
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		FAC715A2D49A985799AEE119 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-ThunderControl/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		60C8A38891444074A1B844C9 /* GoogleService-Info.plist */ = {isa = PBXFileReference; name = "GoogleService-Info.plist"; path = "ThunderControl/GoogleService-Info.plist"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = text.plist.xml; explicitFileType = undefined; includeInIndex = 0; };
+		7C6E7E730C794B0A92A0554B /* noop-file.swift */ = {isa = PBXFileReference; name = "noop-file.swift"; path = "ThunderControl/noop-file.swift"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.swift; explicitFileType = undefined; includeInIndex = 0; };
+		CACC7C602CE5434BA21FADFC /* ThunderControl-Bridging-Header.h */ = {isa = PBXFileReference; name = "ThunderControl-Bridging-Header.h"; path = "ThunderControl/ThunderControl-Bridging-Header.h"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -54,6 +59,9 @@
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				13B07FB71A68108700A75B9A /* main.m */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
+				60C8A38891444074A1B844C9 /* GoogleService-Info.plist */,
+				7C6E7E730C794B0A92A0554B /* noop-file.swift */,
+				CACC7C602CE5434BA21FADFC /* ThunderControl-Bridging-Header.h */,
 			);
 			name = ThunderControl;
 			sourceTree = "<group>";
@@ -193,6 +201,8 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
+				3E8628F6F3A84FB897B85084 /* GoogleService-Info.plist in Resources */,
+				3B39BFADAE664877956AB3C7 /* ThunderControl-Bridging-Header.h in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -268,6 +278,7 @@
 				13B07FBC1A68108700A75B9A /* AppDelegate.mm in Sources */,
 				13B07FC11A68108700A75B9A /* main.m in Sources */,
 				B18059E884C0ABDD17F3DC3D /* ExpoModulesProvider.swift in Sources */,
+				41FACA5DF81B49BF954D9658 /* noop-file.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -295,11 +306,14 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.name.ThunderControl;
-				PRODUCT_NAME = ThunderControl;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yourcompany.thundercontrol";
+				PRODUCT_NAME = "ThunderControl";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				SWIFT_OBJC_BRIDGING_HEADER = ThunderControl/ThunderControl-Bridging-Header.h;
+				CODE_SIGN_ENTITLEMENTS = ThunderControl/ThunderControl.entitlements;
 			};
 			name = Debug;
 		};
@@ -319,10 +333,13 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.name.ThunderControl;
-				PRODUCT_NAME = ThunderControl;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yourcompany.thundercontrol";
+				PRODUCT_NAME = "ThunderControl";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				SWIFT_OBJC_BRIDGING_HEADER = ThunderControl/ThunderControl-Bridging-Header.h;
+				CODE_SIGN_ENTITLEMENTS = ThunderControl/ThunderControl.entitlements;
 			};
 			name = Release;
 		};
