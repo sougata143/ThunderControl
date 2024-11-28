@@ -8,11 +8,12 @@ import {
   ScrollView,
 } from 'react-native';
 import { Input, Button, Text, CheckBox } from 'react-native-elements';
-import { useDispatch } from 'react-redux';
-import { AuthService } from '../../services/auth.service';
+import { useDispatch, useSelector } from 'react-redux';
+import AuthService from '../../services/auth.service';
 import { setUser, setLoading, setError } from '../../store/slices/authSlice';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../navigation/types';
+import { RootState } from '../../store';
 
 type Props = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'Register'>;
@@ -24,6 +25,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isParent, setIsParent] = useState(true);
   const dispatch = useDispatch();
+  const currentUser = useSelector((state: RootState) => state.auth.user);
 
   const handleRegister = async () => {
     if (!email || !password || !confirmPassword) {
@@ -38,7 +40,15 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
 
     try {
       dispatch(setLoading(true));
-      const user = await AuthService.signUp(email, password, isParent);
+      let user;
+      
+      // Check if converting from guest account
+      if (currentUser?.isAnonymous) {
+        user = await AuthService.convertGuestToFull(email, password, isParent);
+      } else {
+        user = await AuthService.signUp(email, password, isParent);
+      }
+      
       dispatch(setUser(user));
     } catch (error: any) {
       dispatch(setError(error.message));

@@ -7,7 +7,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
-  Text as RNText,
+  Text,
 } from 'react-native';
 import { Input, Button, Icon } from 'react-native-elements';
 import { useDispatch } from 'react-redux';
@@ -15,11 +15,11 @@ import { AuthService } from '../services/auth.service';
 import { setUser, setLoading, setError } from '../store/slices/authSlice';
 
 interface Props {
-  isVisible: boolean;
+  visible: boolean;
   onClose: () => void;
 }
 
-const GuestConversionModal: React.FC<Props> = ({ isVisible, onClose }) => {
+const GuestConversionModal: React.FC<Props> = ({ visible, onClose }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -50,21 +50,26 @@ const GuestConversionModal: React.FC<Props> = ({ isVisible, onClose }) => {
     }
   };
 
+  const handleCancel = () => {
+    setEmail('');
+    setPassword('');
+    setConfirmPassword('');
+    onClose();
+  };
+
   return (
     <Modal
-      visible={isVisible}
+      visible={visible}
       transparent
       animationType="slide"
-      onRequestClose={onClose}
+      onRequestClose={handleCancel}
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.modalContainer}
       >
         <View style={styles.modalContent}>
-          <RNText style={styles.title}>
-            Create Your Account
-          </RNText>
+          <Text style={styles.title}>Create Your Account</Text>
           
           <Input
             placeholder="Email"
@@ -91,16 +96,21 @@ const GuestConversionModal: React.FC<Props> = ({ isVisible, onClose }) => {
             leftIcon={<Icon name="lock" type="feather" size={24} color="#666" />}
           />
 
-          <Button
-            title="Create Account"
-            onPress={handleConversion}
-            containerStyle={styles.buttonContainer}
-            raised
-          />
-          
-          <TouchableOpacity onPress={onClose} style={styles.cancelButton}>
-            <RNText style={styles.cancelText}>Cancel</RNText>
-          </TouchableOpacity>
+          <View style={styles.buttonGroup}>
+            <Button
+              title="Create Account"
+              onPress={handleConversion}
+              containerStyle={styles.buttonContainer}
+              raised
+            />
+            
+            <Button
+              title="Not Now"
+              onPress={handleCancel}
+              type="outline"
+              containerStyle={styles.buttonContainer}
+            />
+          </View>
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -110,40 +120,27 @@ const GuestConversionModal: React.FC<Props> = ({ isVisible, onClose }) => {
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     padding: 20,
   },
   modalContent: {
     backgroundColor: 'white',
     borderRadius: 10,
     padding: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    textAlign: 'center',
     marginBottom: 20,
-    color: '#000',
+    textAlign: 'center',
+  },
+  buttonGroup: {
+    marginTop: 20,
+    gap: 10,
   },
   buttonContainer: {
-    marginTop: 10,
-  },
-  cancelButton: {
-    marginTop: 15,
-    alignItems: 'center',
-  },
-  cancelText: {
-    color: '#666',
-    fontSize: 16,
+    marginVertical: 5,
   },
 });
 
