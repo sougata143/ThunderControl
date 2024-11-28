@@ -18,6 +18,7 @@
     "@expo/vector-icons": "^14.0.2",
     "@react-native-async-storage/async-storage": "^1.24.0",
     "@react-native-community/geolocation": "^3.4.0",
+    "@react-native-google-signin/google-signin": "^13.1.0",
     "@react-navigation/bottom-tabs": "^7.0.0",
     "@react-navigation/native": "^7.0.0",
     "@reduxjs/toolkit": "^2.3.0",
@@ -50,7 +51,8 @@
     "react-native-screens": "~4.1.0",
     "react-native-web": "~0.19.13",
     "react-native-webview": "13.12.2",
-    "react-redux": "^9.1.2"
+    "react-redux": "^9.1.2",
+    "expo-dev-client": "~5.0.4"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

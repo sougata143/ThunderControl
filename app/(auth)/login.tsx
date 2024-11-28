@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Platform } from 'react-native';
 import { useDispatch } from 'react-redux';
 import { router } from 'expo-router';
 import { setUser, setLoading } from '../../store/slices/authSlice';
@@ -25,7 +25,7 @@ const LoginScreen: React.FC = () => {
       const user = await AuthService.signIn(email, password);
       dispatch(setUser(user));
       dispatch(setDeviceInfo({ isParent: true }));
-      router.replace('/(tabs)');
+      router.replace('/(parent)/dashboard');
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to sign in');
     } finally {
@@ -40,7 +40,7 @@ const LoginScreen: React.FC = () => {
       if (user) {
         dispatch(setUser(user));
         dispatch(setDeviceInfo({ isParent: true }));
-        router.replace('/(tabs)');
+        router.replace('/(parent)/dashboard');
       }
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to sign in with Google');
@@ -99,17 +99,12 @@ const LoginScreen: React.FC = () => {
         <Button
           title="Continue as Guest"
           onPress={handleGuestLogin}
+          type="outline"
           containerStyle={styles.buttonContainer}
-          buttonStyle={styles.guestButton}
-          titleStyle={styles.guestButtonText}
-          icon={<Ionicons name="person-outline" size={24} color="#0a7ea4" style={styles.guestIcon} />}
         />
-        <View style={styles.signUpContainer}>
-          <Text style={styles.signUpText}>Don't have an account? </Text>
-          <TouchableOpacity onPress={handleSignUp}>
-            <Text style={styles.signUpLink}>Sign Up</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity onPress={handleSignUp} style={styles.signUpContainer}>
+          <Text style={styles.signUpText}>Don't have an account? Sign Up</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -119,11 +114,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+    justifyContent: 'center',
     padding: 20,
   },
   formContainer: {
-    flex: 1,
-    justifyContent: 'center',
+    width: '100%',
+    maxWidth: 400,
+    alignSelf: 'center',
   },
   title: {
     fontSize: 24,
@@ -132,49 +129,29 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   buttonContainer: {
-    marginTop: 10,
+    marginVertical: 5,
     width: '100%',
   },
   button: {
-    backgroundColor: '#0a7ea4',
-    borderRadius: 8,
-    padding: 15,
+    backgroundColor: '#2089dc',
+    borderRadius: 5,
+    padding: 12,
   },
   googleButton: {
     backgroundColor: '#4285F4',
-    borderRadius: 8,
-    padding: 15,
-  },
-  guestButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: '#0a7ea4',
-    borderRadius: 8,
-    padding: 15,
+    borderRadius: 5,
+    padding: 12,
   },
   googleIcon: {
     marginRight: 10,
   },
-  guestIcon: {
-    marginRight: 10,
-  },
-  guestButtonText: {
-    color: '#0a7ea4',
-  },
   signUpContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    marginTop: 15,
     alignItems: 'center',
-    marginTop: 20,
   },
   signUpText: {
+    color: '#2089dc',
     fontSize: 16,
-    color: '#666',
-  },
-  signUpLink: {
-    fontSize: 16,
-    color: '#0a7ea4',
-    fontWeight: 'bold',
   },
 });
 

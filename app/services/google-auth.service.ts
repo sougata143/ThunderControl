@@ -4,45 +4,32 @@ import {
   signInWithCredential,
   getAuth,
   signOut,
-  signInWithEmailAndPassword,
   signInWithPopup
 } from 'firebase/auth';
 import { Platform } from 'react-native';
+import {
+  GoogleSignin,
+  statusCodes,
+} from '@react-native-google-signin/google-signin';
+import Constants from 'expo-constants';
 
-// Ensure the auth session is completed properly
-// maybeCompleteAuthSession(); // Removed this line as it's not used in the updated code
+// Configure Google Sign-In
+GoogleSignin.configure({
+  webClientId: Constants.expoConfig?.extra?.googleWebClientId,
+  iosClientId: Constants.expoConfig?.extra?.googleIosClientId,
+  androidClientId: Constants.expoConfig?.extra?.googleAndroidClientId,
+  offlineAccess: true,
+});
 
 class GoogleAuthService {
   private static provider = new GoogleAuthProvider();
-  // private static webClientId = ''; // Removed this line as it's not used in the updated code
-  // private static iosClientId = ''; // Removed this line as it's not used in the updated code
-  // private static androidClientId = ''; // Removed this line as it's not used in the updated code
-
-  // private static [Google.useIdTokenAuthRequest, authRequest] = Google.useIdTokenAuthRequest({ // Removed this line as it's not used in the updated code
-  //   clientId: Platform.select({
-  //     ios: GoogleAuthService.iosClientId,
-  //     android: GoogleAuthService.androidClientId,
-  //     default: GoogleAuthService.webClientId,
-  //   }),
-  //   iosClientId: GoogleAuthService.iosClientId,
-  //   androidClientId: GoogleAuthService.androidClientId,
-  // });
 
   static async signIn() {
     try {
-      const auth = getAuth();
-      
-      // Add scopes that you want to request from the user
-      this.provider.addScope('https://www.googleapis.com/auth/userinfo.email');
-      this.provider.addScope('https://www.googleapis.com/auth/userinfo.profile');
-
       if (Platform.OS === 'web') {
-        const result = await signInWithPopup(auth, this.provider);
-        return result.user;
+        return await this.webSignIn();
       } else {
-        // For mobile platforms, we'll need to implement native Google Sign-In
-        // This will be implemented in the next iteration
-        throw new Error('Mobile Google Sign-In is not yet implemented. Please use email/password authentication for now.');
+        return await this.nativeSignIn();
       }
     } catch (error: any) {
       console.error('Google Sign In Error:', error);
@@ -50,38 +37,71 @@ class GoogleAuthService {
     }
   }
 
-  // private static async signInWeb() { // Removed this line as it's not used in the updated code
-  //   const auth = getAuth();
-  //   const result = await signInWithPopup(auth, this.provider);
-  //   return result.user;
-  // }
+  private static async webSignIn() {
+    try {
+      const auth = getAuth();
+      this.provider.addScope('https://www.googleapis.com/auth/userinfo.email');
+      this.provider.addScope('https://www.googleapis.com/auth/userinfo.profile');
+      
+      const result = await signInWithPopup(auth, this.provider);
+      return result.user;
+    } catch (error: any) {
+      console.error('Web Google Sign In Error:', error);
+      throw error;
+    }
+  }
 
-  // private static async signInMobile() { // Removed this line as it's not used in the updated code
-  //   const auth = getAuth();
-    
-  //   // Prompt the user to sign in
-  //   const { type, params } = await this.authRequest();
-    
-  //   if (type !== 'success') {
-  //     throw new Error('Google sign in was not successful');
-  //   }
+  private static async nativeSignIn() {
+    try {
+      // Check if your device supports Google Play
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      
+      // Get the users ID token
+      const { idToken } = await GoogleSignin.signIn();
 
-  //   // Create a Google credential with the token
-  //   const { id_token } = params;
-  //   const credential = GoogleAuthProvider.credential(id_token);
+      // Create a Google credential with the token
+      const googleCredential = GoogleAuthProvider.credential(idToken);
 
-  //   // Sign in with the credential
-  //   const result = await signInWithCredential(auth, credential);
-  //   return result.user;
-  // }
+      // Sign-in the user with the credential
+      const userCredential = await signInWithCredential(firebaseAuth, googleCredential);
+      return userCredential.user;
+    } catch (error: any) {
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        throw new Error('User cancelled the login flow');
+      } else if (error.code === statusCodes.IN_PROGRESS) {
+        throw new Error('Sign in is in progress');
+      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        throw new Error('Play services not available or outdated');
+      } else {
+        throw error;
+      }
+    }
+  }
 
   static async signOut() {
     try {
       const auth = getAuth();
-      await signOut(auth);
-    } catch (error) {
-      console.error('Sign Out Error:', error);
+      if (Platform.OS !== 'web') {
+        await GoogleSignin.revokeAccess();
+        await GoogleSignin.signOut();
+      }
+      await auth.signOut();
+    } catch (error: any) {
+      console.error('Google Sign Out Error:', error);
       throw error;
+    }
+  }
+
+  static async getCurrentUser() {
+    try {
+      if (Platform.OS === 'web') {
+        return getAuth().currentUser;
+      } else {
+        const currentUser = await GoogleSignin.getCurrentUser();
+        return currentUser;
+      }
+    } catch (error) {
+      return null;
     }
   }
 }

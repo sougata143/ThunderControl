@@ -1,4 +1,4 @@
-package com.thundercontrol
+package com.yourcompany.thundercontrol
 
 import android.app.Application
 import android.content.res.Configuration
