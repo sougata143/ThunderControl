@@ -115,6 +115,121 @@ Before you begin, ensure you have the following installed:
    - iOS: Place `GoogleService-Info.plist` in `ios/` directory
    - Android: Place `google-services.json` in `android/app/` directory
 
+## Google OAuth Setup
+
+### Prerequisites
+- A Google Cloud Console account
+- Access to the [Google Cloud Console](https://console.cloud.google.com/)
+- Your app's bundle identifier and package name
+
+### Setup Steps
+
+1. **Create and Configure Google Cloud Project**
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Create a new project or select existing project
+   - Enable required APIs:
+     - Google Sign-In API
+     - Google+ API
+     - People API
+
+2. **Configure OAuth Consent Screen**
+   - Navigate to "APIs & Services" > "OAuth consent screen"
+   - Choose "External" user type
+   - Fill in required information:
+     - App name: "ThunderControl"
+     - User support email
+     - Developer contact email
+   - Add required scopes:
+     - email
+     - profile
+     - openid
+
+3. **Create OAuth Client IDs**
+   
+   a. **iOS Client ID**:
+   - Go to "APIs & Services" > "Credentials"
+   - Click "Create Credentials" > "OAuth client ID"
+   - Choose "iOS" application type
+   - Enter your app's bundle ID (e.g., "com.yourcompany.thundercontrol")
+   - Save the client ID
+
+   b. **Android Client ID**:
+   - Choose "Android" application type
+   - Enter your package name
+   - Generate SHA-1 certificate:
+     ```bash
+     cd android && ./gradlew signingReport
+     ```
+   - Enter the SHA-1 fingerprint
+   - Save the client ID
+
+   c. **Web Client ID**:
+   - Choose "Web application" type
+   - Add authorized JavaScript origins
+   - Add authorized redirect URIs
+   - Save the client ID
+
+4. **Configure Environment Variables**
+   Add the following to your `.env` file:
+   ```shell
+   GOOGLE_WEB_CLIENT_ID=your-web-client-id.apps.googleusercontent.com
+   GOOGLE_IOS_CLIENT_ID=your-ios-client-id.apps.googleusercontent.com
+   GOOGLE_ANDROID_CLIENT_ID=your-android-client-id.apps.googleusercontent.com
+   ```
+
+5. **Download Configuration Files**
+   - For iOS: Download `GoogleService-Info.plist`
+   - For Android: Download `google-services.json`
+   - Place both files in the project root directory
+
+6. **Update app.config.js**
+   Ensure your app.config.js has the correct configuration:
+   ```javascript
+   ios: {
+     bundleIdentifier: "your.bundle.id",
+     googleServicesFile: "./GoogleService-Info.plist",
+     config: {
+       googleSignIn: {
+         reservedClientId: process.env.GOOGLE_IOS_CLIENT_ID
+       }
+     }
+   },
+   android: {
+     package: "your.package.name",
+     googleServicesFile: "./google-services.json"
+   }
+   ```
+
+7. **Rebuild the Project**
+   ```bash
+   # Clean and rebuild
+   npx expo prebuild --clean
+   
+   # For iOS, install pods
+   cd ios && pod install && cd ..
+   ```
+
+### Troubleshooting
+
+- If you encounter UTF-8 encoding issues with CocoaPods, add to your `~/.profile` or `~/.zshrc`:
+  ```bash
+  export LANG=en_US.UTF-8
+  ```
+
+- For Android build issues, ensure your `google-services.json` is properly formatted and placed in the project root
+
+- For iOS build issues, verify that:
+  - `GoogleService-Info.plist` is included in the Xcode project
+  - Bundle ID matches in both Xcode and Google Cloud Console
+  - Required pods are installed correctly
+
+### Current Configuration
+
+The app is configured with the following client IDs:
+- Web Client ID: `109575996570-ffc2eu64vq9mgvkafdkk2fk2mk120ik9.apps.googleusercontent.com`
+- iOS Client ID: `109575996570-c5qu55mvdq3vl92g74flpbdb3v074uno.apps.googleusercontent.com`
+- Android Client ID: `109575996570-nsnbem845klp5ahqnd8ae84br4jt94d2.apps.googleusercontent.com`
+
 ## 📱 Running the App
 
 1. **Start the development server**

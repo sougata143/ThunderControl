@@ -1,61 +1,40 @@
-import { Text, type TextProps, StyleSheet } from 'react-native';
+import React from 'react';
+import { Text, TextProps, useColorScheme } from 'react-native';
+import Colors from '@/constants/Colors';
 
-import { useThemeColor } from '@/hooks/useThemeColor';
-
-export type ThemedTextProps = TextProps & {
+interface ThemedTextProps extends TextProps {
+  type?: 'default' | 'defaultSemiBold' | 'defaultBold' | 'title' | 'subtitle' | 'label';
   lightColor?: string;
   darkColor?: string;
-  type?: 'default' | 'title' | 'defaultSemiBold' | 'subtitle' | 'link';
-};
-
-export function ThemedText({
-  style,
-  lightColor,
-  darkColor,
-  type = 'default',
-  ...rest
-}: ThemedTextProps) {
-  const color = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
-
-  return (
-    <Text
-      style={[
-        { color },
-        type === 'default' ? styles.default : undefined,
-        type === 'title' ? styles.title : undefined,
-        type === 'defaultSemiBold' ? styles.defaultSemiBold : undefined,
-        type === 'subtitle' ? styles.subtitle : undefined,
-        type === 'link' ? styles.link : undefined,
-        style,
-      ]}
-      {...rest}
-    />
-  );
 }
 
-const styles = StyleSheet.create({
-  default: {
-    fontSize: 16,
-    lineHeight: 24,
-  },
-  defaultSemiBold: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: '600',
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    lineHeight: 32,
-  },
-  subtitle: {
-    fontSize: 20,
-    lineHeight: 28,
-    fontWeight: '600',
-  },
-  link: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: '#0A7EA4',
-  },
-});
+export function ThemedText(props: ThemedTextProps) {
+  const { style, lightColor, darkColor, type = 'default', ...otherProps } = props;
+  const theme = useColorScheme() ?? 'light';
+  const colors = Colors[theme];
+
+  const color = theme === 'light' ? lightColor ?? colors.text : darkColor ?? colors.text;
+
+  let textStyle = {};
+  switch (type) {
+    case 'defaultBold':
+      textStyle = { fontSize: 16, fontWeight: 'bold' };
+      break;
+    case 'defaultSemiBold':
+      textStyle = { fontSize: 16, fontWeight: '600' };
+      break;
+    case 'title':
+      textStyle = { fontSize: 24, fontWeight: 'bold' };
+      break;
+    case 'subtitle':
+      textStyle = { fontSize: 20, fontWeight: '600' };
+      break;
+    case 'label':
+      textStyle = { fontSize: 14, fontWeight: '500' };
+      break;
+    default:
+      textStyle = { fontSize: 16 };
+  }
+
+  return <Text style={[{ color }, textStyle, style]} {...otherProps} />;
+}

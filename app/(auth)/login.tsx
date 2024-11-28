@@ -9,7 +9,7 @@ import AuthService from '../services/auth.service';
 import GoogleAuthService from '../services/google-auth.service';
 import { Ionicons } from '@expo/vector-icons';
 
-const LoginScreen: React.FC = () => {
+function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const dispatch = useDispatch();
@@ -35,17 +35,11 @@ const LoginScreen: React.FC = () => {
 
   const handleGoogleSignIn = async () => {
     try {
-      dispatch(setLoading(true));
-      const user = await GoogleAuthService.signIn();
-      if (user) {
-        dispatch(setUser(user));
-        dispatch(setDeviceInfo({ isParent: true }));
-        router.replace('/(parent)/dashboard');
-      }
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to sign in with Google');
-    } finally {
-      dispatch(setLoading(false));
+      await GoogleAuthService.signIn();
+      Alert.alert('Notice', 'Google Sign-In is currently disabled');
+    } catch (error) {
+      console.error('Google Sign-In Error:', error);
+      Alert.alert('Error', 'Failed to sign in with Google');
     }
   };
 
