@@ -1,140 +1,152 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Platform } from 'react-native';
 import { useDispatch } from 'react-redux';
 import { router } from 'expo-router';
 import { setUser, setLoading } from '../../store/slices/authSlice';
 import { setDeviceInfo } from '../../store/slices/deviceSlice';
+import { Input, Button } from 'react-native-elements';
+import AuthService from '../services/auth.service';
+import GoogleAuthService from '../services/google-auth.service';
+import { Ionicons } from '@expo/vector-icons';
 
-export default function LoginScreen() {
+function LoginScreen() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const dispatch = useDispatch();
 
-  const handleGuestLogin = async () => {
+  const handleEmailSignIn = async () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please enter both email and password');
+      return;
+    }
+
     try {
       dispatch(setLoading(true));
-      
-      // Create a guest user
-      const guestUser = {
-        id: 'guest_' + Date.now(),
-        email: null,
-        isGuest: true,
-        role: 'parent'
-      };
-
-      // Set device info for guest
-      const deviceInfo = {
-        deviceId: 'device_' + Date.now(),
-        deviceName: 'Guest Device',
-        deviceType: 'mobile',
-        osVersion: 'unknown',
-        batteryLevel: 100,
-        isOnline: true,
-        isParent: true
-      };
-
-      // Update Redux state
-      await Promise.all([
-        dispatch(setUser(guestUser)),
-        dispatch(setDeviceInfo(deviceInfo))
-      ]);
-
-      // Navigate to parent dashboard
+      const user = await AuthService.signIn(email, password);
+      dispatch(setUser(user));
+      dispatch(setDeviceInfo({ isParent: true }));
       router.replace('/(parent)/dashboard');
-    } catch (error) {
-      console.error('Guest login error:', error);
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to sign in');
     } finally {
       dispatch(setLoading(false));
     }
   };
 
-  const handleRegister = () => {
+  const handleGoogleSignIn = async () => {
+    try {
+      await GoogleAuthService.signIn();
+      Alert.alert('Notice', 'Google Sign-In is currently disabled');
+    } catch (error) {
+      console.error('Google Sign-In Error:', error);
+      Alert.alert('Error', 'Failed to sign in with Google');
+    }
+  };
+
+  const handleGuestLogin = () => {
+    try {
+      const guestUser = AuthService.signInAsGuest();
+      dispatch(setUser(guestUser));
+      dispatch(setDeviceInfo({ isParent: true }));
+      router.replace('/(parent)/dashboard');
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to sign in as guest');
+    }
+  };
+
+  const handleSignUp = () => {
     router.push('/(auth)/register');
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>ThunderControl</Text>
-      <Text style={styles.subtitle}>Parental Control & Monitoring</Text>
-      
-      {/* Regular login options will go here */}
-      <View style={styles.loginOptions}>
-        <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>Sign in with Email</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>Sign in with Google</Text>
+      <View style={styles.formContainer}>
+        <Text style={styles.title}>Welcome to ThunderControl</Text>
+        <Input
+          placeholder="Email"
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+          keyboardType="email-address"
+          leftIcon={<Ionicons name="mail-outline" size={24} color="#666" />}
+        />
+        <Input
+          placeholder="Password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          leftIcon={<Ionicons name="lock-closed-outline" size={24} color="#666" />}
+        />
+        <Button
+          title="Sign In"
+          onPress={handleEmailSignIn}
+          containerStyle={styles.buttonContainer}
+          buttonStyle={styles.button}
+        />
+        <Button
+          title="Sign in with Google"
+          onPress={handleGoogleSignIn}
+          containerStyle={styles.buttonContainer}
+          buttonStyle={styles.googleButton}
+          icon={<Ionicons name="logo-google" size={24} color="white" style={styles.googleIcon} />}
+        />
+        <Button
+          title="Continue as Guest"
+          onPress={handleGuestLogin}
+          type="outline"
+          containerStyle={styles.buttonContainer}
+        />
+        <TouchableOpacity onPress={handleSignUp} style={styles.signUpContainer}>
+          <Text style={styles.signUpText}>Don't have an account? Sign Up</Text>
         </TouchableOpacity>
       </View>
-
-      {/* Guest login option */}
-      <TouchableOpacity 
-        style={[styles.button, styles.guestButton]} 
-        onPress={handleGuestLogin}
-      >
-        <Text style={[styles.buttonText, styles.guestButtonText]}>
-          Continue as Guest
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity 
-        style={styles.registerLink}
-        onPress={handleRegister}
-      >
-        <Text style={styles.registerText}>
-          Don't have an account? Sign up
-        </Text>
-      </TouchableOpacity>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
     backgroundColor: '#fff',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  formContainer: {
+    width: '100%',
+    maxWidth: 400,
+    alignSelf: 'center',
   },
   title: {
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#007AFF',
+    marginBottom: 30,
+    textAlign: 'center',
   },
-  subtitle: {
-    fontSize: 18,
-    color: '#666',
-    marginBottom: 40,
-  },
-  loginOptions: {
+  buttonContainer: {
+    marginVertical: 5,
     width: '100%',
-    marginBottom: 20,
   },
   button: {
-    backgroundColor: '#007AFF',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
-    width: '100%',
+    backgroundColor: '#2089dc',
+    borderRadius: 5,
+    padding: 12,
   },
-  buttonText: {
-    color: '#fff',
-    textAlign: 'center',
-    fontSize: 16,
-    fontWeight: '600',
+  googleButton: {
+    backgroundColor: '#4285F4',
+    borderRadius: 5,
+    padding: 12,
   },
-  guestButton: {
-    backgroundColor: '#E5E5EA',
+  googleIcon: {
+    marginRight: 10,
   },
-  guestButtonText: {
-    color: '#007AFF',
+  signUpContainer: {
+    marginTop: 15,
+    alignItems: 'center',
   },
-  registerLink: {
-    marginTop: 20,
-  },
-  registerText: {
-    color: '#007AFF',
+  signUpText: {
+    color: '#2089dc',
     fontSize: 16,
   },
 });
+
+export default LoginScreen;

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "347105322813",
+    "project_id": "thundercontrol-8d40f",
+    "storage_bucket": "thundercontrol-8d40f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:347105322813:android:a4761d2f758214bcd28754",
+        "android_client_info": {
+          "package_name": "com.yourcompany.thundercontrol"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAc9rX8tQnehwnJh94CNJOJOM1oR54sTfY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -8,8 +8,10 @@ ThunderControl is a comprehensive mobile application built with React Native and
 - Multi-role support (Parent/Child)
 - Email & Password authentication
 - Google Sign-in integration
-- Guest account access
-- Guest to full account conversion
+- Optional guest account access
+  - Full feature access in guest mode
+  - Easy account creation when ready
+  - Seamless guest-to-full account conversion
 - Password reset functionality
 
 ### Parent Features
@@ -30,6 +32,14 @@ ThunderControl is a comprehensive mobile application built with React Native and
 - Achievement tracking
 - Educational content access
 
+## 🎨 UI/UX Features
+- Dynamic theme system with light/dark mode support
+- Responsive layouts for all screen sizes
+- Smooth animations and transitions
+- Intuitive navigation with Expo Router
+- Modern and clean design
+- Accessibility support
+
 ## 🛠 Technology Stack
 
 ### Frontend
@@ -38,6 +48,7 @@ ThunderControl is a comprehensive mobile application built with React Native and
 - Expo Router v4 (for navigation)
 - Redux Toolkit (state management)
 - React Native Elements (UI components)
+- React Native Reanimated (for animations)
 
 ### Backend & Services
 - Firebase Authentication
@@ -94,145 +105,190 @@ Before you begin, ensure you have the following installed:
    - Configure Firebase Rules
    - Add your app to Firebase project
 
-## 🚀 Running the App
+5. **Google Sign-in Configuration**
+   
+   a. **Download Configuration Files**
+   - Download `GoogleService-Info.plist` for iOS from Firebase Console
+   - Download `google-services.json` for Android from Firebase Console
 
-### Development
-```bash
-# Start the development server
-npm start
-# or
-yarn start
+   b. **Place Configuration Files**
+   - iOS: Place `GoogleService-Info.plist` in `ios/` directory
+   - Android: Place `google-services.json` in `android/app/` directory
 
-# Run on iOS
-npm run ios
-# or
-yarn ios
+## Google OAuth Setup
 
-# Run on Android
-npm run android
-# or
-yarn android
-```
+### Prerequisites
+- A Google Cloud Console account
+- Access to the [Google Cloud Console](https://console.cloud.google.com/)
+- Your app's bundle identifier and package name
 
-### Production Build
-```bash
-# Build for iOS
-eas build --platform ios
+### Setup Steps
 
-# Build for Android
-eas build --platform android
-```
+1. **Create and Configure Google Cloud Project**
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Create a new project or select existing project
+   - Enable required APIs:
+     - Google Sign-In API
+     - Google+ API
+     - People API
+
+2. **Configure OAuth Consent Screen**
+   - Navigate to "APIs & Services" > "OAuth consent screen"
+   - Choose "External" user type
+   - Fill in required information:
+     - App name: "ThunderControl"
+     - User support email
+     - Developer contact email
+   - Add required scopes:
+     - email
+     - profile
+     - openid
+
+3. **Create OAuth Client IDs**
+   
+   a. **iOS Client ID**:
+   - Go to "APIs & Services" > "Credentials"
+   - Click "Create Credentials" > "OAuth client ID"
+   - Choose "iOS" application type
+   - Enter your app's bundle ID (e.g., "com.yourcompany.thundercontrol")
+   - Save the client ID
+
+   b. **Android Client ID**:
+   - Choose "Android" application type
+   - Enter your package name
+   - Generate SHA-1 certificate:
+     ```bash
+     cd android && ./gradlew signingReport
+     ```
+   - Enter the SHA-1 fingerprint
+   - Save the client ID
+
+   c. **Web Client ID**:
+   - Choose "Web application" type
+   - Add authorized JavaScript origins
+   - Add authorized redirect URIs
+   - Save the client ID
+
+4. **Configure Environment Variables**
+   Add the following to your `.env` file:
+   ```shell
+   GOOGLE_WEB_CLIENT_ID=your-web-client-id.apps.googleusercontent.com
+   GOOGLE_IOS_CLIENT_ID=your-ios-client-id.apps.googleusercontent.com
+   GOOGLE_ANDROID_CLIENT_ID=your-android-client-id.apps.googleusercontent.com
+   ```
+
+5. **Download Configuration Files**
+   - For iOS: Download `GoogleService-Info.plist`
+   - For Android: Download `google-services.json`
+   - Place both files in the project root directory
+
+6. **Update app.config.js**
+   Ensure your app.config.js has the correct configuration:
+   ```javascript
+   ios: {
+     bundleIdentifier: "your.bundle.id",
+     googleServicesFile: "./GoogleService-Info.plist",
+     config: {
+       googleSignIn: {
+         reservedClientId: process.env.GOOGLE_IOS_CLIENT_ID
+       }
+     }
+   },
+   android: {
+     package: "your.package.name",
+     googleServicesFile: "./google-services.json"
+   }
+   ```
+
+7. **Rebuild the Project**
+   ```bash
+   # Clean and rebuild
+   npx expo prebuild --clean
+   
+   # For iOS, install pods
+   cd ios && pod install && cd ..
+   ```
+
+### Troubleshooting
+
+- If you encounter UTF-8 encoding issues with CocoaPods, add to your `~/.profile` or `~/.zshrc`:
+  ```bash
+  export LANG=en_US.UTF-8
+  ```
+
+- For Android build issues, ensure your `google-services.json` is properly formatted and placed in the project root
+
+- For iOS build issues, verify that:
+  - `GoogleService-Info.plist` is included in the Xcode project
+  - Bundle ID matches in both Xcode and Google Cloud Console
+  - Required pods are installed correctly
+
+### Current Configuration
+
+The app is configured with the following client IDs:
+- Web Client ID: `109575996570-ffc2eu64vq9mgvkafdkk2fk2mk120ik9.apps.googleusercontent.com`
+- iOS Client ID: `109575996570-c5qu55mvdq3vl92g74flpbdb3v074uno.apps.googleusercontent.com`
+- Android Client ID: `109575996570-nsnbem845klp5ahqnd8ae84br4jt94d2.apps.googleusercontent.com`
+
+## 📱 Running the App
+
+1. **Start the development server**
+   ```bash
+   npx expo start
+   ```
+
+2. **Run on iOS Simulator**
+   ```bash
+   npx expo run:ios
+   ```
+
+3. **Run on Android Emulator**
+   ```bash
+   npx expo run:android
+   ```
 
 ## 📁 Project Structure
 
 ```
 thundercontrol/
 ├── app/                    # Main application code
-│   ├── components/         # Reusable components
-│   ├── config/            # Configuration files
-│   ├── navigation/        # Navigation setup
-│   ├── screens/           # Screen components
-│   │   ├── auth/         # Authentication screens
-│   │   ├── parent/       # Parent screens
-│   │   └── child/        # Child screens
-│   ├── services/         # API and service functions
-│   ├── store/            # Redux store setup
-│   │   └── slices/       # Redux slices
-│   ├── types/            # TypeScript type definitions
-│   └── utils/            # Utility functions
+│   ├── (auth)/            # Authentication routes
+│   ├── (parent)/          # Parent dashboard routes
+│   ├── (child)/           # Child dashboard routes
+│   ├── components/        # Reusable components
+│   ├── config/           # Configuration files
+│   ├── constants/        # Constants and theme
+│   ├── hooks/           # Custom React hooks
+│   ├── services/        # API and service layer
+│   ├── store/           # Redux store setup
+│   └── utils/           # Utility functions
 ├── assets/               # Static assets
-├── docs/                 # Documentation
-└── firebase/            # Firebase related files
-    └── functions/       # Cloud Functions
+├── types/               # TypeScript type definitions
+└── app.config.js        # Expo configuration
 ```
 
-## 🔐 Security
+## 🔒 Security Features
 
-- All sensitive data is encrypted
-- Firebase Security Rules are implemented
-- Regular security audits
-- No sensitive data stored locally
-- Secure communication protocols
+- Secure authentication flow
+- Protected routes and navigation
+- Data encryption
+- Secure storage for sensitive information
+- Rate limiting
+- Input validation
+- Session management
 
-## 📱 Supported Platforms
+## 🌐 Supported Platforms
 
 - iOS 13.0 and later
-- Android 8.0 (API Level 26) and later
-
-## 🧪 Testing
-
-```bash
-# Run unit tests
-npm test
-
-# Run e2e tests
-npm run e2e
-
-# Run specific test file
-npm test filename.test.ts
-```
-
-## 📦 Available Scripts
-
-- `npm start`: Start the Expo development server
-- `npm test`: Run tests
-- `npm run lint`: Run ESLint
-- `npm run format`: Format code with Prettier
-- `npm run build`: Build the app
-- `npm run eject`: Eject from Expo (if needed)
-
-## 🔄 State Management
-
-The app uses Redux Toolkit for state management with the following main slices:
-- `auth`: Authentication state
-- `device`: Device information and settings
-- `monitoring`: Monitoring data and settings
-- `settings`: App settings
-
-## 🌐 API Integration
-
-The app integrates with Firebase services through:
-- `AuthService`: Authentication operations
-- `DeviceService`: Device management
-- `MonitoringService`: Activity monitoring
-- `NotificationService`: Push notifications
-
-## 📈 Monitoring Features
-
-- Screen time tracking
-- App usage statistics
-- Website monitoring
-- Location tracking
-- Activity reports
-- Real-time alerts
-
-## 🎯 Future Roadmap
-
-- [ ] Screen recording prevention
-- [ ] AI-powered content filtering
-- [ ] Cross-platform synchronization
-- [ ] Advanced scheduling features
-- [ ] Enhanced reporting capabilities
-- [ ] Multi-language support
-
-## 📝 Changelog
-
-### Latest Updates (2024-01-09)
-- Fixed guest login functionality
-  - Added proper device info handling in Redux store
-  - Corrected parent dashboard routing for guest users
-  - Updated auth service to properly set device and user information
-- Code Improvements
-  - Added default exports to React components
-  - Enhanced type safety in Redux slices
-  - Improved state management for device information
+- Android API Level 21 (Android 5.0) and later
+- Web (experimental support)
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
 ## 📄 License
@@ -245,11 +301,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- React Native community
-- Expo team
-- Firebase team
-- All contributors
-
-## 📞 Support
-
-For support, email support@thundercontrol.com or join our Slack channel.
+- [Expo](https://expo.dev/)
+- [React Native](https://reactnative.dev/)
+- [Firebase](https://firebase.google.com/)
+- [React Native Elements](https://reactnativeelements.com/)

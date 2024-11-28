@@ -6,10 +6,9 @@ import Animated, {
   useAnimatedStyle,
   useScrollViewOffset,
 } from 'react-native-reanimated';
-
 import { ThemedView } from '@/components/ThemedView';
 import { useBottomTabOverflow } from '@/components/ui/TabBarBackground';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useColorScheme } from '@/hooks/useThemeColor';
 
 const HEADER_HEIGHT = 250;
 
@@ -23,10 +22,11 @@ export default function ParallaxScrollView({
   headerImage,
   headerBackgroundColor,
 }: Props) {
-  const colorScheme = useColorScheme() ?? 'light';
+  const theme = useColorScheme();
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollOffset = useScrollViewOffset(scrollRef);
   const bottom = useBottomTabOverflow();
+
   const headerAnimatedStyle = useAnimatedStyle(() => {
     return {
       transform: [
@@ -49,17 +49,17 @@ export default function ParallaxScrollView({
       <Animated.ScrollView
         ref={scrollRef}
         scrollEventThrottle={16}
-        scrollIndicatorInsets={{ bottom }}
-        contentContainerStyle={{ paddingBottom: bottom }}>
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: bottom }]}
+        style={styles.scrollView}>
         <Animated.View
           style={[
             styles.header,
-            { backgroundColor: headerBackgroundColor[colorScheme] },
             headerAnimatedStyle,
+            { backgroundColor: theme === 'light' ? headerBackgroundColor.light : headerBackgroundColor.dark },
           ]}>
           {headerImage}
         </Animated.View>
-        <ThemedView style={styles.content}>{children}</ThemedView>
+        {children}
       </Animated.ScrollView>
     </ThemedView>
   );
@@ -69,14 +69,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    height: HEADER_HEIGHT,
-    overflow: 'hidden',
-  },
-  content: {
+  scrollView: {
     flex: 1,
-    padding: 32,
-    gap: 16,
+  },
+  scrollContent: {
+    paddingTop: HEADER_HEIGHT,
+  },
+  header: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    height: HEADER_HEIGHT,
+    alignItems: 'center',
+    justifyContent: 'center',
     overflow: 'hidden',
   },
 });

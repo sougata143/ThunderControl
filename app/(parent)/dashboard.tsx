@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
 import GuestConversionModal from '../components/GuestConversionModal';
+import { router } from 'expo-router';
+import { Button } from 'react-native-elements';
 
 interface DeviceCard {
   id: string;
@@ -20,121 +22,119 @@ interface ActivityCard {
   timestamp: string;
 }
 
-const mockDevices: DeviceCard[] = [
-  {
-    id: '1',
-    name: 'iPhone 13',
-    type: 'mobile',
-    status: 'online',
-    batteryLevel: 85,
-  },
-  {
-    id: '2',
-    name: 'iPad Pro',
-    type: 'tablet',
-    status: 'offline',
-    batteryLevel: 20,
-  },
-];
-
-const mockActivities: ActivityCard[] = [
-  {
-    id: '1',
-    type: 'app',
-    title: 'TikTok',
-    duration: '45 min',
-    timestamp: '2 hours ago',
-  },
-  {
-    id: '2',
-    type: 'web',
-    title: 'YouTube',
-    duration: '1 hour',
-    timestamp: '3 hours ago',
-  },
-];
-
-export default function ParentDashboardScreen() {
-  const [isModalVisible, setIsModalVisible] = useState(false);
+export default function ParentDashboard() {
+  const [showGuestModal, setShowGuestModal] = useState(false);
   const user = useSelector((state: RootState) => state.auth.user);
+  const isGuest = user?.isGuest;
 
-  const isGuest = user?.isGuest ?? false;
+  // Mock data for demonstration
+  const devices: DeviceCard[] = [
+    {
+      id: '1',
+      name: 'iPhone 12',
+      type: 'mobile',
+      status: 'online',
+      batteryLevel: 85,
+    },
+    {
+      id: '2',
+      name: 'iPad Pro',
+      type: 'tablet',
+      status: 'offline',
+      batteryLevel: 45,
+    },
+  ];
 
-  const renderDeviceCard = (device: DeviceCard) => (
-    <View key={device.id} style={styles.deviceCard}>
-      <Text style={styles.deviceName}>{device.name}</Text>
-      <Text style={[
-        styles.deviceStatus,
-        { color: device.status === 'online' ? '#34C759' : '#FF3B30' }
-      ]}>
-        {device.status}
-      </Text>
-      <Text style={styles.batteryLevel}>{device.batteryLevel}%</Text>
-    </View>
-  );
+  const recentActivities: ActivityCard[] = [
+    {
+      id: '1',
+      type: 'app',
+      title: 'TikTok',
+      duration: '45 min',
+      timestamp: '2 hours ago',
+    },
+    {
+      id: '2',
+      type: 'web',
+      title: 'YouTube',
+      duration: '30 min',
+      timestamp: '3 hours ago',
+    },
+  ];
 
-  const renderActivityCard = (activity: ActivityCard) => (
-    <View key={activity.id} style={styles.activityCard}>
-      <Text style={styles.activityTitle}>{activity.title}</Text>
-      <Text style={styles.activityDuration}>{activity.duration}</Text>
-      <Text style={styles.activityTimestamp}>{activity.timestamp}</Text>
-    </View>
-  );
+  const handleDevicePress = (deviceId: string) => {
+    router.push(`/parent/device-monitoring?deviceId=${deviceId}`);
+  };
 
-  const renderFeatureCard = (title: string, isLocked: boolean = false) => (
-    <TouchableOpacity 
-      style={[styles.featureCard, isLocked && styles.lockedFeature]}
-      disabled={isLocked}
-    >
-      <Text style={styles.featureTitle}>{title}</Text>
-      {isLocked && (
-        <Text style={styles.lockedText}>
-          {isGuest ? 'Guest Preview' : 'Locked'}
-        </Text>
-      )}
-    </TouchableOpacity>
-  );
+  const handleActivityPress = (activityId: string) => {
+    router.push(`/parent/monitoring-report?activityId=${activityId}`);
+  };
+
+  const handleCreateAccount = () => {
+    setShowGuestModal(true);
+  };
 
   return (
-    <ScrollView style={styles.container}>
-      {isGuest && (
-        <TouchableOpacity 
-          style={styles.guestBanner}
-          onPress={() => setIsModalVisible(true)}
-        >
-          <Text style={styles.guestBannerText}>
-            👋 You're in guest mode. Create an account to unlock all features!
-          </Text>
-        </TouchableOpacity>
-      )}
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Connected Devices</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {mockDevices.map(renderDeviceCard)}
-        </ScrollView>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
-        <View style={styles.featureGrid}>
-          {renderFeatureCard('Screen Time', isGuest)}
-          {renderFeatureCard('App Usage', false)}
-          {renderFeatureCard('Location', isGuest)}
-          {renderFeatureCard('Communication', isGuest)}
+    <View style={styles.container}>
+      <ScrollView>
+        {isGuest && (
+          <View style={styles.guestBanner}>
+            <Text style={styles.guestText}>You're using ThunderControl as a guest</Text>
+            <Button
+              title="Create Account"
+              onPress={() => setShowGuestModal(true)}
+              type="outline"
+              containerStyle={styles.createAccountButton}
+            />
+          </View>
+        )}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Connected Devices</Text>
+          {devices.map((device) => (
+            <TouchableOpacity
+              key={device.id}
+              style={styles.card}
+              onPress={() => handleDevicePress(device.id)}
+            >
+              <View style={styles.deviceInfo}>
+                <Text style={styles.deviceName}>{device.name}</Text>
+                <Text style={styles.deviceType}>{device.type}</Text>
+              </View>
+              <View style={styles.deviceStatus}>
+                <Text style={[
+                  styles.statusText,
+                  { color: device.status === 'online' ? '#4CAF50' : '#F44336' }
+                ]}>
+                  {device.status}
+                </Text>
+                <Text style={styles.batteryText}>{device.batteryLevel}%</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
         </View>
-      </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Recent Activities</Text>
-        {mockActivities.map(renderActivityCard)}
-      </View>
-
-      <GuestConversionModal 
-        isVisible={isModalVisible}
-        onClose={() => setIsModalVisible(false)}
-      />
-    </ScrollView>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Recent Activities</Text>
+          {recentActivities.map((activity) => (
+            <TouchableOpacity
+              key={activity.id}
+              style={styles.card}
+              onPress={() => handleActivityPress(activity.id)}
+            >
+              <View style={styles.activityInfo}>
+                <Text style={styles.activityTitle}>{activity.title}</Text>
+                <Text style={styles.activityType}>{activity.type}</Text>
+              </View>
+              <View style={styles.activityDuration}>
+                <Text style={styles.durationText}>{activity.duration}</Text>
+                <Text style={styles.timestampText}>{activity.timestamp}</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
+      <GuestConversionModal visible={showGuestModal} onClose={() => setShowGuestModal(false)} />
+    </View>
   );
 }
 
@@ -142,89 +142,99 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+    paddingTop: 20,
   },
   guestBanner: {
-    backgroundColor: '#007AFF',
-    padding: 15,
-    margin: 10,
-    borderRadius: 10,
-  },
-  guestBannerText: {
-    color: '#fff',
-    textAlign: 'center',
-    fontSize: 16,
-  },
-  section: {
-    padding: 15,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 15,
-    color: '#000',
-  },
-  deviceCard: {
     backgroundColor: '#f5f5f5',
     padding: 15,
-    borderRadius: 10,
+    marginHorizontal: 15,
+    marginBottom: 20,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  guestText: {
+    fontSize: 14,
+    color: '#666',
+    flex: 1,
     marginRight: 10,
-    width: 150,
+  },
+  createAccountButton: {
+    minWidth: 120,
+  },
+  section: {
+    marginBottom: 20,
+    paddingHorizontal: 15,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  card: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 15,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  deviceInfo: {
+    flex: 1,
   },
   deviceName: {
     fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 5,
+    fontWeight: '500',
   },
-  deviceStatus: {
-    fontSize: 14,
-    marginBottom: 5,
-  },
-  batteryLevel: {
+  deviceType: {
     fontSize: 14,
     color: '#666',
+    marginTop: 4,
   },
-  featureGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+  deviceStatus: {
+    alignItems: 'flex-end',
   },
-  featureCard: {
-    backgroundColor: '#f5f5f5',
-    padding: 15,
-    borderRadius: 10,
-    width: '48%',
-    marginBottom: 15,
+  statusText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
-  lockedFeature: {
-    opacity: 0.7,
-  },
-  featureTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 5,
-  },
-  lockedText: {
+  batteryText: {
     fontSize: 12,
-    color: '#FF3B30',
+    color: '#666',
+    marginTop: 4,
   },
-  activityCard: {
-    backgroundColor: '#f5f5f5',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
+  activityInfo: {
+    flex: 1,
   },
   activityTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 5,
+    fontWeight: '500',
   },
-  activityDuration: {
+  activityType: {
     fontSize: 14,
     color: '#666',
-    marginBottom: 3,
+    marginTop: 4,
   },
-  activityTimestamp: {
+  activityDuration: {
+    alignItems: 'flex-end',
+  },
+  durationText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  timestampText: {
     fontSize: 12,
-    color: '#999',
+    color: '#666',
+    marginTop: 4,
   },
 });

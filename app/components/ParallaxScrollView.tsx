@@ -1,21 +1,22 @@
 import type { PropsWithChildren, ReactElement } from 'react';
 import { StyleSheet } from 'react-native';
-import Animated, {
-  interpolate,
-  useAnimatedRef,
-  useAnimatedStyle,
-  useScrollViewOffset,
+import { 
+  Animated, 
+  interpolate, 
+  useAnimatedRef, 
+  useAnimatedStyle, 
+  useScrollViewOffset 
 } from 'react-native-reanimated';
-
-import { ThemedView } from '@/components/ThemedView';
-import { useBottomTabOverflow } from '@/components/ui/TabBarBackground';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { ThemedView } from './ThemedView';
+import { useBottomTabOverflow } from './ui/TabBarBackground';
+import { useColorScheme } from 'react-native';
+import Colors from '../constants/Colors';
 
 const HEADER_HEIGHT = 250;
 
 type Props = PropsWithChildren<{
   headerImage: ReactElement;
-  headerBackgroundColor: { dark: string; light: string };
+  headerBackgroundColor: { light: string; dark: string };
 }>;
 
 export default function ParallaxScrollView({
@@ -23,10 +24,12 @@ export default function ParallaxScrollView({
   headerImage,
   headerBackgroundColor,
 }: Props) {
-  const colorScheme = useColorScheme() ?? 'light';
+  const theme = useColorScheme() ?? 'light';
+  const colors = Colors[theme];
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollOffset = useScrollViewOffset(scrollRef);
   const bottom = useBottomTabOverflow();
+
   const headerAnimatedStyle = useAnimatedStyle(() => {
     return {
       transform: [
@@ -49,15 +52,16 @@ export default function ParallaxScrollView({
       <Animated.ScrollView
         ref={scrollRef}
         scrollEventThrottle={16}
-        contentContainerStyle={{ paddingBottom: bottom }}
-        contentInsetAdjustmentBehavior="never">
-        <ThemedView
-          style={[styles.header, { backgroundColor: headerBackgroundColor[colorScheme] }]}>
-          <Animated.View style={[styles.headerImage, headerAnimatedStyle]}>
-            {headerImage}
-          </Animated.View>
-        </ThemedView>
-
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: bottom }]}
+        style={styles.scrollView}>
+        <Animated.View
+          style={[
+            styles.header,
+            headerAnimatedStyle,
+            { backgroundColor: theme === 'light' ? headerBackgroundColor.light : headerBackgroundColor.dark },
+          ]}>
+          {headerImage}
+        </Animated.View>
         {children}
       </Animated.ScrollView>
     </ThemedView>
@@ -68,16 +72,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingTop: HEADER_HEIGHT,
+  },
   header: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
     height: HEADER_HEIGHT,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
     overflow: 'hidden',
-  },
-  headerImage: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });
