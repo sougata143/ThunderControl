@@ -10,48 +10,52 @@ const features = [
     id: 'location',
     title: 'Location Tracking',
     icon: '📍',
-    route: 'location-tracking/index',
+    route: 'location',
     description: 'Track device location and set safe zones'
   },
   {
     id: 'calls',
     title: 'Call Logs',
     icon: '📞',
-    route: 'call-logs/index',
+    route: 'call-logs',
     description: 'Monitor call history and contacts'
   },
   {
     id: 'messages',
     title: 'Messages',
     icon: '💬',
-    route: 'messages/index',
+    route: 'messages',
     description: 'View and filter text messages'
   },
   {
     id: 'devices',
     title: 'Devices',
     icon: '📱',
-    route: 'devices/index',
+    route: 'devices',
     description: 'Manage connected devices'
   },
   {
     id: 'reports',
     title: 'Reports',
     icon: '📊',
-    route: 'reports/index',
+    route: 'reports',
     description: 'View detailed activity reports'
   },
   {
     id: 'restrictions',
     title: 'Restrictions',
     icon: '🔒',
-    route: 'restrictions/index',
+    route: 'device-restrictions',
     description: 'Set app and content restrictions'
   }
 ];
 
 export default function ParentDashboard() {
   const router = useRouter();
+
+  const handleNavigation = (route: string) => {
+    router.push(`/(parent)/${route}`);
+  };
 
   return (
     <ThemedView style={styles.container}>
@@ -65,7 +69,7 @@ export default function ParentDashboard() {
             <TouchableOpacity
               key={feature.id}
               style={styles.card}
-              onPress={() => router.push(feature.route)}
+              onPress={() => handleNavigation(feature.route)}
             >
               <View style={styles.iconContainer}>
                 <ThemedText style={styles.icon}>{feature.icon}</ThemedText>

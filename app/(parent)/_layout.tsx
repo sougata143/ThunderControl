@@ -35,51 +35,51 @@ export default function ParentLayout() {
         }}
       />
       <Stack.Screen
-        name="location-tracking/index"
+        name="location"
         options={{
           title: 'Location Tracking'
         }}
       />
       <Stack.Screen
-        name="call-logs/index"
+        name="call-logs"
         options={{
           title: 'Call Logs'
         }}
       />
       <Stack.Screen
-        name="messages/index"
+        name="messages"
         options={{
           title: 'Messages'
         }}
       />
       <Stack.Screen
-        name="devices/index"
+        name="devices"
         options={{
           title: 'Devices'
         }}
       />
       <Stack.Screen
-        name="devices/[id]/index"
+        name="device-restrictions"
         options={{
-          title: 'Device Details'
+          title: 'Restrictions'
         }}
       />
       <Stack.Screen
-        name="reports/index"
+        name="reports"
         options={{
           title: 'Reports'
         }}
       />
       <Stack.Screen
-        name="reports/[type]"
+        name="settings"
         options={{
-          title: 'Report Details'
+          title: 'Settings'
         }}
       />
       <Stack.Screen
-        name="restrictions/index"
+        name="profile"
         options={{
-          title: 'Restrictions'
+          title: 'Profile'
         }}
       />
     </Stack>

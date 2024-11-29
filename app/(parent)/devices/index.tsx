@@ -1,142 +1,180 @@
-import React, { useState } from 'react';
-import { StyleSheet, ScrollView, View, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, ScrollView, View, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
-import { ThemedText } from '../../components/ThemedText';
-import { ThemedView } from '../../components/ThemedView';
-import { IconSymbol } from '../../components/ui/IconSymbol';
-import Colors from '../../constants/Colors';
-
-type ChildDevice = {
-  id: string;
-  name: string;
-  deviceType: string;
-  lastActive: string;
-  status: 'online' | 'offline';
-  icon: string;
-};
-
-const mockDevices: ChildDevice[] = [
-  {
-    id: '1',
-    name: "Sarah's iPhone",
-    deviceType: 'iPhone 13',
-    lastActive: '2 mins ago',
-    status: 'online',
-    icon: 'iphone',
-  },
-  {
-    id: '2',
-    name: "Tom's iPad",
-    deviceType: 'iPad Air',
-    lastActive: '15 mins ago',
-    status: 'online',
-    icon: 'ipad',
-  },
-];
+import ThemedText from '@/components/ThemedText';
+import ThemedView from '@/components/ThemedView';
+import { IconSymbol } from '@/components/ui/IconSymbol';
+import Colors from '@/constants/Colors';
+import DeviceManagementService, { ChildDevice } from '@/services/device-management.service';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function DevicesScreen() {
   const router = useRouter();
-  const [devices] = useState<ChildDevice[]>(mockDevices);
+  const [devices, setDevices] = useState<ChildDevice[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Configure header with add button
+  React.useLayoutEffect(() => {
+    router.setParams({
+      header: () => (
+        <Stack.Screen
+          options={{
+            title: 'Devices',
+            headerRight: () => (
+              <TouchableOpacity
+                onPress={handleAddDevice}
+                style={styles.headerButton}
+              >
+                <IconSymbol name="plus.circle.fill" size={24} color={Colors.light.primary} />
+              </TouchableOpacity>
+            ),
+          }}
+        />
+      ),
+    });
+  }, [router]);
+
+  const loadDevices = async () => {
+    try {
+      setLoading(true);
+      const deviceList = await DeviceManagementService.getChildDevices();
+      setDevices(deviceList);
+    } catch (error) {
+      console.error('Error loading devices:', error);
+      Alert.alert('Error', 'Failed to load devices. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Reload devices when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      loadDevices();
+    }, [])
+  );
 
   const handleAddDevice = () => {
-    router.push('/add-device');
+    router.push('/(parent)/add-device');
   };
 
   const handleDevicePress = (deviceId: string) => {
-    router.push(`/device-details/${deviceId}`);
+    router.push(`/(parent)/devices/${deviceId}`);
   };
 
-  const handleDeviceAction = (deviceId: string, action: string) => {
-    Alert.alert(
-      'Confirm Action',
-      `Are you sure you want to ${action} this device?`,
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Confirm',
-          onPress: () => console.log(`${action} device ${deviceId}`),
-        },
-      ]
-    );
+  const handleDeviceAction = async (deviceId: string, action: string) => {
+    try {
+      switch (action) {
+        case 'remove':
+          Alert.alert(
+            'Remove Device',
+            'Are you sure you want to remove this device? This action cannot be undone.',
+            [
+              {
+                text: 'Cancel',
+                style: 'cancel',
+              },
+              {
+                text: 'Remove',
+                style: 'destructive',
+                onPress: async () => {
+                  await DeviceManagementService.removeDevice(deviceId);
+                  loadDevices();
+                },
+              },
+            ]
+          );
+          break;
+        case 'restrictions':
+          router.push(`/device-restrictions/${deviceId}`);
+          break;
+        default:
+          console.warn('Unknown action:', action);
+      }
+    } catch (error) {
+      console.error('Error performing device action:', error);
+      Alert.alert('Error', 'Failed to perform action. Please try again.');
+    }
   };
 
   return (
-    <>
-      <Stack.Screen 
+    <ThemedView style={styles.container}>
+      <Stack.Screen
         options={{
-          title: 'Managed Devices',
-          headerLargeTitle: true,
+          title: 'Devices',
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={handleAddDevice}
+              style={styles.headerButton}
+            >
+              <IconSymbol name="plus.circle.fill" size={24} color={Colors.light.primary} />
+            </TouchableOpacity>
+          ),
         }}
       />
-      <ThemedView style={styles.container}>
-        <ScrollView style={styles.scrollView}>
-          <View style={styles.header}>
-            <ThemedText type="title">Connected Devices</ThemedText>
-            <TouchableOpacity 
-              style={styles.addButton}
-              onPress={handleAddDevice}
-            >
-              <IconSymbol name="plus.circle.fill" size={24} color={Colors.light.tint} />
-              <ThemedText style={styles.addButtonText}>Add Device</ThemedText>
-            </TouchableOpacity>
-          </View>
-
+      
+      {loading ? (
+        <View style={styles.centerContent}>
+          <ActivityIndicator size="large" color={Colors.light.primary} />
+        </View>
+      ) : devices.length === 0 ? (
+        <View style={styles.emptyState}>
+          <IconSymbol name="devices" size={64} color={Colors.light.primary} />
+          <ThemedText style={styles.emptyStateTitle}>No Devices</ThemedText>
+          <ThemedText style={styles.emptyStateText}>
+            Add a child device to start monitoring
+          </ThemedText>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={handleAddDevice}
+          >
+            <IconSymbol name="plus" size={20} color="#fff" />
+            <ThemedText style={styles.addButtonText}>Add Device</ThemedText>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <ScrollView style={styles.content}>
           {devices.map((device) => (
             <TouchableOpacity
               key={device.id}
               style={styles.deviceCard}
               onPress={() => handleDevicePress(device.id)}
             >
-              <View style={styles.deviceIcon}>
-                <IconSymbol name={device.icon} size={32} color={Colors.light.tint} />
-              </View>
               <View style={styles.deviceInfo}>
-                <ThemedText type="defaultSemiBold">{device.name}</ThemedText>
-                <ThemedText style={styles.deviceType}>{device.deviceType}</ThemedText>
-                <View style={styles.statusContainer}>
+                <View style={styles.deviceHeader}>
+                  <ThemedText style={styles.deviceName}>{device.name}</ThemedText>
                   <View style={[
-                    styles.statusDot,
-                    { backgroundColor: device.status === 'online' ? '#4CAF50' : '#757575' }
+                    styles.statusIndicator,
+                    { backgroundColor: device.status === 'online' ? '#4CAF50' : '#9E9E9E' }
                   ]} />
-                  <ThemedText style={styles.lastActive}>
-                    {device.status === 'online' ? 'Online' : device.lastActive}
-                  </ThemedText>
+                </View>
+                <ThemedText style={styles.deviceModel}>{device.deviceModel}</ThemedText>
+                <View style={styles.deviceStats}>
+                  <View style={styles.statItem}>
+                    <IconSymbol name="battery.100" size={16} color="#666" />
+                    <ThemedText style={styles.statText}>
+                      {Math.round((device.batteryLevel || 0) * 100)}%
+                    </ThemedText>
+                  </View>
+                  <View style={styles.statItem}>
+                    <IconSymbol name="clock" size={16} color="#666" />
+                    <ThemedText style={styles.statText}>
+                      Last seen: {new Date(device.lastSeen).toLocaleTimeString()}
+                    </ThemedText>
+                  </View>
                 </View>
               </View>
-              <View style={styles.actions}>
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={() => handleDeviceAction(device.id, 'pause')}
-                >
-                  <IconSymbol name="pause.circle.fill" size={24} color="#FF9800" />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={() => handleDeviceAction(device.id, 'block')}
-                >
-                  <IconSymbol name="xmark.circle.fill" size={24} color="#F44336" />
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity
+                style={styles.removeButton}
+                onPress={() => handleDeviceAction(device.id, 'remove')}
+              >
+                <IconSymbol name="trash" size={20} color="#ff3b30" />
+              </TouchableOpacity>
             </TouchableOpacity>
           ))}
-
-          {devices.length === 0 && (
-            <View style={styles.emptyState}>
-              <IconSymbol name="devices" size={64} color={Colors.light.tint} />
-              <ThemedText type="title" style={styles.emptyStateTitle}>
-                No Devices Added
-              </ThemedText>
-              <ThemedText style={styles.emptyStateText}>
-                Add your child's device to start monitoring and managing their digital activities.
-              </ThemedText>
-            </View>
-          )}
         </ScrollView>
-      </ThemedView>
-    </>
+      )}
+    </ThemedView>
   );
 }
 
@@ -144,96 +182,112 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  scrollView: {
-    flex: 1,
+  headerButton: {
+    marginRight: 16,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  centerContent: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
+  },
+  content: {
+    flex: 1,
     padding: 16,
-    paddingBottom: 8,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  emptyStateTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 24,
   },
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.light.tint + '10',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    backgroundColor: Colors.light.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   addButtonText: {
-    marginLeft: 4,
-    color: Colors.light.tint,
+    color: '#fff',
+    fontSize: 16,
     fontWeight: '600',
+    marginLeft: 8,
   },
   deviceCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
-    marginHorizontal: 16,
-    marginBottom: 12,
-    padding: 16,
     borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
-  deviceIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: Colors.light.tint + '10',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
   deviceInfo: {
     flex: 1,
   },
-  deviceType: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 2,
-  },
-  statusContainer: {
+  deviceHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
+    justifyContent: 'space-between',
+    marginBottom: 4,
   },
-  statusDot: {
+  deviceName: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  statusIndicator: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    marginRight: 6,
   },
-  lastActive: {
-    fontSize: 12,
+  deviceModel: {
+    fontSize: 14,
     color: '#666',
+    marginBottom: 8,
   },
-  actions: {
+  deviceStats: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  actionButton: {
-    padding: 4,
-    marginLeft: 8,
-  },
-  emptyState: {
+  statItem: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: 32,
-    marginTop: 64,
+    marginRight: 16,
   },
-  emptyStateTitle: {
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptyStateText: {
-    textAlign: 'center',
+  statText: {
+    fontSize: 12,
     color: '#666',
-    paddingHorizontal: 32,
+    marginLeft: 4,
+  },
+  removeButton: {
+    padding: 8,
   },
 });

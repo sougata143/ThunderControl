@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { StyleSheet, ScrollView, View, TouchableOpacity, Alert, Share } from 'react-native';
+import { StyleSheet, ScrollView, View, TouchableOpacity, Alert, Share, ActivityIndicator } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
-import { ThemedText } from '../../components/ThemedText';
-import { ThemedView } from '../../components/ThemedView';
-import { IconSymbol } from '../../components/ui/IconSymbol';
-import Colors from '../../constants/Colors';
-import DeviceMonitoringService from '../../services/device-monitoring.service';
+import ThemedText from '@/components/ThemedText';
+import ThemedView from '@/components/ThemedView';
+import { IconSymbol } from '@/components/ui/IconSymbol';
+import Colors from '@/constants/Colors';
+import DeviceMonitoringService from '@/services/device-monitoring.service';
 
 type ReportType = {
   id: string;
@@ -51,13 +51,21 @@ const reportTypes: ReportType[] = [
   },
 ];
 
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+}
+
 export default function ReportsScreen() {
   const router = useRouter();
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [generating, setGenerating] = useState<string | null>(null);
 
   const handleReportPress = async (report: ReportType) => {
     try {
-      setIsGenerating(true);
+      setGenerating(report.id);
       const reportData = await DeviceMonitoringService.generateReport(report.type);
       
       // Format report data as text
@@ -70,9 +78,9 @@ export default function ReportsScreen() {
       });
     } catch (error) {
       console.error('Error generating report:', error);
-      Alert.alert('Error', 'Failed to generate report');
+      Alert.alert('Error', 'Failed to generate report. Please try again.');
     } finally {
-      setIsGenerating(false);
+      setGenerating(null);
     }
   };
 
@@ -90,131 +98,95 @@ export default function ReportsScreen() {
         break;
 
       case 'location':
-        report += `Location History:\n`;
+        report += `Current Location:\n`;
+        report += `- Latitude: ${data.currentLocation.latitude}\n`;
+        report += `- Longitude: ${data.currentLocation.longitude}\n\n`;
+        
+        report += `Location History (Last ${data.locationHistory.length} locations):\n`;
         data.locationHistory.forEach((loc: any, index: number) => {
           report += `${index + 1}. ${loc.address || 'Unknown Location'}\n`;
           report += `   Time: ${new Date(loc.timestamp).toLocaleString()}\n`;
         });
-        report += `\nSafe Zones:\n`;
+        
+        report += `\nSafe Zones (${data.safeZones.length}):\n`;
         data.safeZones.forEach((zone: any) => {
           report += `- ${zone.name} (Radius: ${zone.radius}m)\n`;
         });
         break;
 
       case 'communication':
-        report += `Call Statistics:\n`;
-        const calls = data.calls;
-        const incoming = calls.filter((c: any) => c.type === 'incoming').length;
-        const outgoing = calls.filter((c: any) => c.type === 'outgoing').length;
-        const missed = calls.filter((c: any) => c.type === 'missed').length;
-        report += `- Incoming Calls: ${incoming}\n`;
-        report += `- Outgoing Calls: ${outgoing}\n`;
-        report += `- Missed Calls: ${missed}\n`;
+        report += `Communication Summary:\n`;
+        report += `- Total Calls: ${data.stats.totalCalls}\n`;
+        report += `- Total Messages: ${data.stats.totalMessages}\n`;
+        report += `- Blocked Messages: ${data.stats.blockedMessages}\n\n`;
 
-        report += `\nMessage Statistics:\n`;
-        const messages = data.messages;
-        const sent = messages.filter((m: any) => m.type === 'sent').length;
-        const received = messages.filter((m: any) => m.type === 'received').length;
-        const blocked = messages.filter((m: any) => m.isBlocked).length;
-        report += `- Sent Messages: ${sent}\n`;
-        report += `- Received Messages: ${received}\n`;
-        report += `- Blocked Messages: ${blocked}\n`;
+        report += `Recent Calls:\n`;
+        data.callLogs.slice(0, 5).forEach((call: any) => {
+          report += `- ${call.name} (${call.number})\n`;
+          report += `  ${call.type} call, Duration: ${call.duration}\n`;
+          report += `  Time: ${new Date(call.timestamp).toLocaleString()}\n`;
+        });
         break;
 
       case 'safety':
-        report += `Blocked Messages:\n`;
-        data.blockedMessages.forEach((msg: any) => {
-          report += `- From: ${msg.contact || msg.number}\n`;
-          report += `  Preview: ${msg.preview}\n`;
-          report += `  Time: ${new Date(msg.timestamp).toLocaleString()}\n\n`;
-        });
+        report += `Safety Summary:\n`;
+        report += `- Total Alerts: ${data.alerts.length}\n`;
+        report += `- Blocked Content: ${data.blockedContent.length}\n`;
+        report += `- Security Events: ${data.securityEvents.length}\n`;
         break;
+
+      default:
+        report += `No data available for this report type.`;
     }
 
     return report;
   };
 
-  const formatBytes = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
   return (
-    <>
-      <Stack.Screen 
+    <ThemedView style={styles.container}>
+      <Stack.Screen
         options={{
           title: 'Reports',
-          headerLargeTitle: true,
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
         }}
       />
-      <ThemedView style={styles.container}>
-        <ScrollView style={styles.scrollView}>
-          {/* Report Types */}
-          <View style={styles.grid}>
-            {reportTypes.map((report) => (
-              <TouchableOpacity
-                key={report.id}
-                style={styles.reportCard}
-                onPress={() => handleReportPress(report)}
-                disabled={isGenerating}
-              >
-                <View style={[styles.iconContainer, { backgroundColor: report.color + '10' }]}>
-                  <IconSymbol name={report.icon} size={32} color={report.color} />
-                </View>
-                <ThemedText type="defaultSemiBold" style={styles.reportTitle}>
-                  {report.title}
-                </ThemedText>
-                <ThemedText style={styles.reportDescription}>
-                  {report.description}
-                </ThemedText>
-              </TouchableOpacity>
-            ))}
-          </View>
+      <ScrollView style={styles.content}>
+        <View style={styles.header}>
+          <ThemedText style={styles.title}>Device Reports</ThemedText>
+          <ThemedText style={styles.subtitle}>
+            Generate and share detailed reports about device usage and activity
+          </ThemedText>
+        </View>
 
-          {/* Quick Actions */}
-          <View style={styles.section}>
-            <ThemedText type="title" style={styles.sectionTitle}>Quick Actions</ThemedText>
-            <View style={styles.actionsList}>
-              <TouchableOpacity 
-                style={styles.actionButton}
-                onPress={async () => {
-                  try {
-                    setIsGenerating(true);
-                    const reports = await Promise.all(
-                      reportTypes.map(report => 
-                        DeviceMonitoringService.generateReport(report.type)
-                      )
-                    );
-                    
-                    // Combine all reports
-                    const combinedReport = reportTypes.map((report, index) => 
-                      formatReportData(report.type, reports[index])
-                    ).join('\n\n' + '='.repeat(50) + '\n\n');
-                    
-                    await Share.share({
-                      title: 'ThunderControl Complete Report',
-                      message: combinedReport,
-                    });
-                  } catch (error) {
-                    console.error('Error generating complete report:', error);
-                    Alert.alert('Error', 'Failed to generate complete report');
-                  } finally {
-                    setIsGenerating(false);
-                  }
-                }}
-                disabled={isGenerating}
-              >
-                <IconSymbol name="square.and.arrow.down" size={24} color={Colors.light.tint} />
-                <ThemedText style={styles.actionText}>Download All Reports</ThemedText>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </ScrollView>
-      </ThemedView>
-    </>
+        <View style={styles.grid}>
+          {reportTypes.map((report) => (
+            <TouchableOpacity
+              key={report.id}
+              style={[styles.card, { borderColor: report.color + '40' }]}
+              onPress={() => handleReportPress(report)}
+              disabled={generating !== null}
+            >
+              <View style={[styles.iconContainer, { backgroundColor: report.color + '20' }]}>
+                <IconSymbol
+                  name={report.icon}
+                  size={32}
+                  color={report.color}
+                />
+              </View>
+              <ThemedText style={styles.cardTitle}>{report.title}</ThemedText>
+              <ThemedText style={styles.cardDescription}>{report.description}</ThemedText>
+              {generating === report.id && (
+                <View style={styles.loadingOverlay}>
+                  <ActivityIndicator color={report.color} />
+                </View>
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
+    </ThemedView>
   );
 }
 
@@ -222,22 +194,39 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  scrollView: {
+  content: {
     flex: 1,
+    padding: 16,
+  },
+  header: {
+    marginBottom: 24,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#666',
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    padding: 16,
-    gap: 16,
+    justifyContent: 'space-between',
   },
-  reportCard: {
-    width: '47%',
+  card: {
+    width: '48%',
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
@@ -250,40 +239,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  reportTitle: {
-    fontSize: 16,
-    marginBottom: 4,
-  },
-  reportDescription: {
-    fontSize: 12,
-    color: '#666',
-  },
-  section: {
-    marginTop: 16,
-  },
-  sectionTitle: {
-    marginHorizontal: 16,
-    marginBottom: 12,
-  },
-  actionsList: {
-    paddingHorizontal: 16,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    marginBottom: 12,
-    padding: 16,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  actionText: {
-    marginLeft: 12,
+  cardTitle: {
     fontSize: 16,
     fontWeight: '600',
+    marginBottom: 8,
+  },
+  cardDescription: {
+    fontSize: 14,
+    color: '#666',
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 12,
   },
 });
