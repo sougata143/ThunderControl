@@ -19,120 +19,76 @@ import {
 import { DeviceMonitoringService } from '../services/device-monitoring.service';
 import type { LocationData, SafeZone, CallLogEntry, MessageEntry, DeviceStats } from '../services/device-monitoring.service';
 
-export const useMonitoring = () => {
+export default function useMonitoring() {
   const dispatch = useDispatch();
   const monitoringState = useSelector((state: RootState) => state.monitoring);
-  const monitoringService = DeviceMonitoringService.getInstance();
 
-  // Device Stats
-  const updateDeviceStats = useCallback(async () => {
-    const stats = await monitoringService.getDeviceStats();
+  const updateDeviceStats = useCallback((stats: DeviceStats) => {
     dispatch(setDeviceStats(stats));
-    return stats;
   }, [dispatch]);
 
-  // Location Tracking
-  const startLocationTracking = useCallback(async () => {
-    dispatch(setLiveTracking(true));
-    const unsubscribe = await monitoringService.startLocationTracking((location) => {
-      dispatch(addLocationData(location));
-    });
-    return unsubscribe;
+  const updateLocation = useCallback((location: LocationData) => {
+    dispatch(addLocationData(location));
   }, [dispatch]);
 
-  const stopLocationTracking = useCallback(async () => {
-    dispatch(setLiveTracking(false));
-    await monitoringService.stopLocationTracking();
-  }, [dispatch]);
-
-  const loadLocationHistory = useCallback(async () => {
-    const history = await monitoringService.getLocationHistory();
+  const updateLocationHistory = useCallback((history: LocationData[]) => {
     dispatch(setLocationHistory(history));
-    return history;
   }, [dispatch]);
 
-  // Safe Zones
-  const createSafeZone = useCallback(async (zone: Omit<SafeZone, 'id'>) => {
-    const newZone = await monitoringService.createSafeZone(zone);
-    dispatch(addSafeZone(newZone));
-    return newZone;
+  const addNewSafeZone = useCallback((zone: SafeZone) => {
+    dispatch(addSafeZone(zone));
   }, [dispatch]);
 
-  const deleteSafeZone = useCallback(async (zoneId: string) => {
-    await monitoringService.deleteSafeZone(zoneId);
+  const deleteSafeZone = useCallback((zoneId: string) => {
     dispatch(removeSafeZone(zoneId));
   }, [dispatch]);
 
-  const loadSafeZones = useCallback(async () => {
-    const zones = await monitoringService.getSafeZones();
+  const updateSafeZones = useCallback((zones: SafeZone[]) => {
     dispatch(setSafeZones(zones));
-    return zones;
   }, [dispatch]);
 
-  // Call Logs
-  const loadCallLogs = useCallback(async () => {
-    const logs = await monitoringService.getCallLogs();
+  const addNewCallLog = useCallback((log: CallLogEntry) => {
+    dispatch(addCallLog(log));
+  }, [dispatch]);
+
+  const updateCallLogs = useCallback((logs: CallLogEntry[]) => {
     dispatch(setCallLogs(logs));
-    return logs;
   }, [dispatch]);
 
-  const updateCallLogs = useCallback(async () => {
-    const newLog = await monitoringService.getLatestCallLog();
-    if (newLog) {
-      dispatch(addCallLog(newLog));
-    }
-    return newLog;
+  const addNewMessage = useCallback((message: MessageEntry) => {
+    dispatch(addMessage(message));
   }, [dispatch]);
 
-  // Messages
-  const loadMessages = useCallback(async () => {
-    const messages = await monitoringService.getMessages();
+  const updateMessages = useCallback((messages: MessageEntry[]) => {
     dispatch(setMessages(messages));
-    return messages;
   }, [dispatch]);
 
-  const updateMessages = useCallback(async () => {
-    const newMessage = await monitoringService.getLatestMessage();
-    if (newMessage) {
-      dispatch(addMessage(newMessage));
-    }
-    return newMessage;
-  }, [dispatch]);
-
-  const blockMessage = useCallback(async (messageId: string) => {
-    await monitoringService.toggleMessageBlocked(messageId);
+  const toggleBlockedMessage = useCallback((messageId: string) => {
     dispatch(toggleMessageBlocked(messageId));
   }, [dispatch]);
 
-  // Data Management
-  const clearMonitoringData = useCallback(async () => {
-    await monitoringService.clearAllData();
+  const setTracking = useCallback((isTracking: boolean) => {
+    dispatch(setLiveTracking(isTracking));
+  }, [dispatch]);
+
+  const clearMonitoringData = useCallback(() => {
     dispatch(clearAllData());
   }, [dispatch]);
 
   return {
-    // State
-    deviceStats: monitoringState.deviceStats,
-    locationHistory: monitoringState.locationHistory,
-    safeZones: monitoringState.safeZones,
-    callLogs: monitoringState.callLogs,
-    messages: monitoringState.messages,
-    isLiveTracking: monitoringState.isLiveTracking,
-    lastUpdated: monitoringState.lastUpdated,
-
-    // Actions
+    monitoringState,
     updateDeviceStats,
-    startLocationTracking,
-    stopLocationTracking,
-    loadLocationHistory,
-    createSafeZone,
+    updateLocation,
+    updateLocationHistory,
+    addNewSafeZone,
     deleteSafeZone,
-    loadSafeZones,
-    loadCallLogs,
+    updateSafeZones,
+    addNewCallLog,
     updateCallLogs,
-    loadMessages,
+    addNewMessage,
     updateMessages,
-    blockMessage,
+    toggleBlockedMessage,
+    setTracking,
     clearMonitoringData,
   };
-};
+}

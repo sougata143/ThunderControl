@@ -1,10 +1,10 @@
 import React from 'react';
 import { StyleSheet, ScrollView, View, TouchableOpacity } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { ThemedText } from '../../../components/ThemedText';
-import { ThemedView } from '../../../components/ThemedView';
-import { IconSymbol } from '../../../components/ui/IconSymbol';
-import Colors from '../../../constants/Colors';
+import ThemedText from '@/components/ThemedText';
+import ThemedView from '@/components/ThemedView';
+import { IconSymbol } from '@/components/ui/IconSymbol';
+import Colors from '@/constants/Colors';
 
 type DeviceStat = {
   id: string;

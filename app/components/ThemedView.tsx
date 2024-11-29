@@ -7,7 +7,7 @@ interface ThemedViewProps extends ViewProps {
   darkColor?: string;
 }
 
-export function ThemedView(props: ThemedViewProps) {
+export default function ThemedView(props: ThemedViewProps) {
   const { style, lightColor, darkColor, ...otherProps } = props;
   const theme = useColorScheme() ?? 'light';
   const colors = Colors[theme];

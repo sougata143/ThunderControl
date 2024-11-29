@@ -1,14 +1,12 @@
 import { Stack } from 'expo-router';
 import { useColorScheme } from 'react-native';
 import { Provider } from 'react-redux';
-import { ThemeProvider } from '@/components/theme/ThemeProvider';
+import ThemeProvider from '@/components/theme/ThemeProvider';
 import store from '@/store';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-
-import 'react-native-reanimated';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -34,17 +32,13 @@ export default function RootLayout() {
   return (
     <Provider store={store}>
       <ThemeProvider value={colorScheme}>
-        <Stack
-          screenOptions={{
-            headerStyle: {
-              backgroundColor: colorScheme === 'dark' ? '#000' : '#fff',
-            },
-            headerTintColor: colorScheme === 'dark' ? '#fff' : '#000',
-            headerTitleStyle: {
-              fontWeight: 'bold',
-            },
-          }}
-        />
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="(parent)" />
+          <Stack.Screen name="(tabs)" />
+        </Stack>
+        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
       </ThemeProvider>
     </Provider>
   );

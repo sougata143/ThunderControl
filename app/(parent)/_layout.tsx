@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router';
 import { useSelector } from 'react-redux';
-import { RootState } from '../../store';
+import { RootState } from '@/store';
 import { Redirect } from 'expo-router';
 
 export default function ParentLayout() {
@@ -20,108 +20,66 @@ export default function ParentLayout() {
         headerStyle: {
           backgroundColor: '#f5f5f5',
         },
-        headerTintColor: '#007AFF',
+        headerTintColor: '#000',
         headerTitleStyle: {
           fontWeight: 'bold',
         },
+        headerBackTitleVisible: false,
       }}
     >
-      {/* Main Dashboard */}
       <Stack.Screen
-        name="dashboard"
+        name="index"
         options={{
-          title: 'Parent Dashboard',
-          headerLargeTitle: true,
+          title: 'Dashboard',
+          headerShown: false
         }}
       />
-
-      {/* Device Management */}
+      <Stack.Screen
+        name="location-tracking/index"
+        options={{
+          title: 'Location Tracking'
+        }}
+      />
+      <Stack.Screen
+        name="call-logs/index"
+        options={{
+          title: 'Call Logs'
+        }}
+      />
+      <Stack.Screen
+        name="messages/index"
+        options={{
+          title: 'Messages'
+        }}
+      />
       <Stack.Screen
         name="devices/index"
         options={{
-          title: 'Managed Devices',
-          headerLargeTitle: true,
+          title: 'Devices'
         }}
       />
       <Stack.Screen
         name="devices/[id]/index"
         options={{
-          title: 'Device Details',
-          headerLargeTitle: true,
-        }}
-      />
-      <Stack.Screen
-        name="add-device/index"
-        options={{
-          title: 'Add New Device',
-          presentation: 'modal',
-        }}
-      />
-
-      {/* Monitoring & Reports */}
-      <Stack.Screen
-        name="activities"
-        options={{
-          title: 'Activities',
-          headerLargeTitle: true,
-        }}
-      />
-      <Stack.Screen
-        name="location-tracking"
-        options={{
-          title: 'Location Tracking',
-          headerLargeTitle: true,
-        }}
-      />
-      <Stack.Screen
-        name="call-logs"
-        options={{
-          title: 'Call Records',
-          headerLargeTitle: true,
-        }}
-      />
-      <Stack.Screen
-        name="messages"
-        options={{
-          title: 'Messages',
-          headerLargeTitle: true,
+          title: 'Device Details'
         }}
       />
       <Stack.Screen
         name="reports/index"
         options={{
-          title: 'Reports',
-          headerLargeTitle: true,
+          title: 'Reports'
         }}
       />
       <Stack.Screen
         name="reports/[type]"
         options={{
-          title: 'Report Details',
-          headerLargeTitle: true,
-        }}
-      />
-
-      {/* Settings & Profile */}
-      <Stack.Screen
-        name="settings"
-        options={{
-          title: 'Settings',
-          presentation: 'modal',
+          title: 'Report Details'
         }}
       />
       <Stack.Screen
-        name="profile"
+        name="restrictions/index"
         options={{
-          title: 'Profile',
-          presentation: 'modal',
-        }}
-      />
-      <Stack.Screen
-        name="restrictions"
-        options={{
-          title: 'Restrictions',
-          presentation: 'modal',
+          title: 'Restrictions'
         }}
       />
     </Stack>

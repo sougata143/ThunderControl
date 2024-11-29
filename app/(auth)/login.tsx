@@ -25,7 +25,7 @@ function LoginScreen() {
       const user = await AuthService.signIn(email, password);
       dispatch(setUser(user));
       dispatch(setDeviceInfo({ isParent: true }));
-      router.replace('/(parent)/dashboard');
+      router.replace('/(parent)');
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to sign in');
     } finally {
@@ -48,7 +48,7 @@ function LoginScreen() {
       const guestUser = AuthService.signInAsGuest();
       dispatch(setUser(guestUser));
       dispatch(setDeviceInfo({ isParent: true }));
-      router.replace('/(parent)/dashboard');
+      router.replace('/(parent)');
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to sign in as guest');
     }
