@@ -1,8 +1,8 @@
 import React from 'react';
 import { StyleSheet, ScrollView } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { ThemedView } from '@/components/ThemedView';
-import { ThemedText } from '@/components/ThemedText';
+import ThemedView from '@/components/ThemedView';
+import ThemedText from '@/components/ThemedText';
 
 export default function ReportDetailScreen() {
   const { type } = useLocalSearchParams();
