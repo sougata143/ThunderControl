@@ -1,11 +1,9 @@
-import { Link, Stack } from 'expo-router';
 import { StyleSheet } from 'react-native';
-import React from 'react';
+import { Link, Stack } from 'expo-router';
+import ThemedText from '@/components/ThemedText';
+import ThemedView from '@/components/ThemedView';
 
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-
-const NotFoundScreen: React.FC = () => {
+export default function NotFoundScreen() {
   return (
     <>
       <Stack.Screen options={{ title: 'Oops!' }} />
@@ -17,7 +15,7 @@ const NotFoundScreen: React.FC = () => {
       </ThemedView>
     </>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -29,15 +27,14 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: 'bold',
+    marginBottom: 16,
   },
   link: {
-    marginTop: 15,
-    paddingVertical: 15,
+    marginTop: 16,
+    paddingVertical: 8,
   },
   linkText: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#2e78b7',
   },
 });
-
-export default NotFoundScreen;

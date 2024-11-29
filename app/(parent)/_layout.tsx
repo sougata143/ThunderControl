@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router';
 import { useSelector } from 'react-redux';
-import { RootState } from '../../store';
+import { RootState } from '@/store';
 import { Redirect } from 'expo-router';
 
 export default function ParentLayout() {
@@ -20,80 +20,66 @@ export default function ParentLayout() {
         headerStyle: {
           backgroundColor: '#f5f5f5',
         },
-        headerTintColor: '#007AFF',
+        headerTintColor: '#000',
         headerTitleStyle: {
           fontWeight: 'bold',
         },
+        headerBackTitleVisible: false,
       }}
     >
       <Stack.Screen
-        name="dashboard"
+        name="index"
         options={{
-          title: 'Parent Dashboard',
-          headerLargeTitle: true,
+          title: 'Dashboard',
+          headerShown: false
         }}
       />
       <Stack.Screen
-        name="activities"
+        name="location"
         options={{
-          title: 'Activities',
-          presentation: 'modal',
+          title: 'Location Tracking'
         }}
       />
       <Stack.Screen
-        name="restrictions"
+        name="call-logs"
         options={{
-          title: 'Restrictions',
-          presentation: 'modal',
+          title: 'Call Logs'
         }}
       />
       <Stack.Screen
-        name="profile"
+        name="messages"
         options={{
-          title: 'Profile',
-          presentation: 'modal',
+          title: 'Messages'
         }}
       />
       <Stack.Screen
-        name="device-monitoring"
+        name="devices"
         options={{
-          title: 'Device Monitoring',
-          presentation: 'modal',
+          title: 'Devices'
         }}
       />
       <Stack.Screen
-        name="location-tracking"
+        name="device-restrictions"
         options={{
-          title: 'Location Tracking',
-          presentation: 'modal',
+          title: 'Restrictions'
         }}
       />
       <Stack.Screen
-        name="communication"
+        name="reports"
         options={{
-          title: 'Communication',
-          presentation: 'modal',
+          title: 'Reports'
         }}
       />
       <Stack.Screen
         name="settings"
         options={{
-          title: 'Settings',
-          presentation: 'modal',
+          title: 'Settings'
         }}
       />
       <Stack.Screen
-        name="add-child"
+        name="profile"
         options={{
-          title: 'Add Child Device',
-          presentation: 'modal',
-        }}
-      />
-      <Stack.Screen
-        name="monitoring-report"
-        options={{
-          title: 'Monitoring Report',
-          presentation: 'modal',
+          title: 'Profile'
         }}
       />
     </Stack>

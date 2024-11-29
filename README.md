@@ -20,10 +20,15 @@ ThunderControl is a comprehensive mobile application built with React Native and
 - Screen time management
 - Content filtering
 - Location tracking
-- Activity reports
+- Activity reports with sharing
 - Multiple child device management
 - Remote device control
 - Custom rule creation
+- Comprehensive device reports:
+  - Activity Reports (app usage, screen time)
+  - Location Reports (movement patterns, safe zones)
+  - Communication Reports (calls, messages)
+  - Safety Reports (alerts, blocked content)
 
 ### Child Features
 - Simplified dashboard
@@ -39,6 +44,10 @@ ThunderControl is a comprehensive mobile application built with React Native and
 - Intuitive navigation with Expo Router
 - Modern and clean design
 - Accessibility support
+- Loading states and progress indicators
+- Share functionality for reports
+- Interactive device management
+- Visual feedback for user actions
 
 ## 🛠 Technology Stack
 
@@ -49,12 +58,17 @@ ThunderControl is a comprehensive mobile application built with React Native and
 - Redux Toolkit (state management)
 - React Native Elements (UI components)
 - React Native Reanimated (for animations)
+- Expo Location
+- Expo Battery
+- Expo Device
+- Expo FileSystem
 
 ### Backend & Services
 - Firebase Authentication
 - Firebase Realtime Database
 - Firebase Cloud Functions
 - Firebase Cloud Messaging (for notifications)
+- AsyncStorage for local data
 
 ### Development Tools
 - Expo CLI
@@ -65,7 +79,7 @@ ThunderControl is a comprehensive mobile application built with React Native and
 ## 📋 Prerequisites
 
 Before you begin, ensure you have the following installed:
-- Node.js (v16 or later)
+- Node.js (v23.2.0 or later)
 - npm or yarn
 - Expo CLI (`npm install -g expo-cli`)
 - iOS Simulator (for Mac users) or Android Studio (for Android development)
@@ -254,12 +268,21 @@ thundercontrol/
 ├── app/                    # Main application code
 │   ├── (auth)/            # Authentication routes
 │   ├── (parent)/          # Parent dashboard routes
+│   │   ├── devices/       # Device management
+│   │   ├── reports/       # Activity reports
+│   │   ├── messages/      # Message monitoring
+│   │   └── settings/      # App settings
 │   ├── (child)/           # Child dashboard routes
 │   ├── components/        # Reusable components
+│   │   ├── ui/           # UI components
+│   │   └── themed/       # Themed components
 │   ├── config/           # Configuration files
 │   ├── constants/        # Constants and theme
 │   ├── hooks/           # Custom React hooks
 │   ├── services/        # API and service layer
+│   │   ├── device-management.service.ts
+│   │   ├── device-monitoring.service.ts
+│   │   └── auth.service.ts
 │   ├── store/           # Redux store setup
 │   └── utils/           # Utility functions
 ├── assets/               # Static assets
@@ -276,6 +299,9 @@ thundercontrol/
 - Rate limiting
 - Input validation
 - Session management
+- Device verification
+- Safe zone monitoring
+- Content filtering
 
 ## 🌐 Supported Platforms
 

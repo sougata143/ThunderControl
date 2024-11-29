@@ -1,9 +1,9 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './slices/authSlice';
-import monitoringReducer from './slices/monitoringSlice';
+import monitoringReducer from './monitoring.slice';
 import deviceReducer from './slices/deviceSlice';
 
-const store = configureStore({
+export const store = configureStore({
   reducer: {
     auth: authReducer,
     monitoring: monitoringReducer,

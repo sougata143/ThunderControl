@@ -12,7 +12,7 @@ interface ThemeProviderProps {
   children: React.ReactNode;
 }
 
-export function ThemeProvider({ value, children }: ThemeProviderProps) {
+export default function ThemeProvider({ value, children }: ThemeProviderProps) {
   return (
     <ThemeContext.Provider value={value}>
       {children}

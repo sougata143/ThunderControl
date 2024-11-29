@@ -8,7 +8,7 @@ interface ThemedTextProps extends TextProps {
   darkColor?: string;
 }
 
-export function ThemedText(props: ThemedTextProps) {
+export default function ThemedText(props: ThemedTextProps) {
   const { style, lightColor, darkColor, type = 'default', ...otherProps } = props;
   const theme = useColorScheme() ?? 'light';
   const colors = Colors[theme];
