@@ -1,298 +1,187 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, View, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
-import { Stack } from 'expo-router';
+import React, { useCallback, useState, useEffect } from 'react';
+import { StyleSheet, View, FlatList, RefreshControl, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { Stack, useRouter } from 'expo-router';
+import { IconSymbol } from '@/components/ui/IconSymbol';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
-import { IconSymbol } from '@/components/ui/IconSymbol';
+import useCommunicationMonitoring from '@/hooks/useCommunicationMonitoring';
+import FilterBar from '@/components/communication/FilterBar';
+import SearchBar from '@/components/communication/SearchBar';
+import TimeRangeSelector from '@/components/communication/TimeRangeSelector';
+import CommunicationFilters from '@/utils/communication-filters';
+import type { MessageFilter, TimeRange } from '@/utils/communication-filters';
+import PermissionsService from '@/services/permissions.service';
 import Colors from '@/constants/Colors';
-import DeviceManagementService from '@/services/device-management.service';
 
-export type MessageEntry = {
-  id: string;
-  type: 'sent' | 'received';
-  contact: {
-    name: string;
-    number: string;
-  };
-  content: string;
-  timestamp: string;
-  isBlocked: boolean;
-  deviceId: string;
-};
-
-// Mock data for demonstration
-const mockMessages: MessageEntry[] = [
-  {
-    id: '1',
-    type: 'received',
-    contact: {
-      name: 'Mom',
-      number: '+1234567890',
-    },
-    content: 'How was school today?',
-    timestamp: new Date().toISOString(),
-    isBlocked: false,
-    deviceId: '1',
-  },
-  {
-    id: '2',
-    type: 'sent',
-    contact: {
-      name: 'Mom',
-      number: '+1234567890',
-    },
-    content: 'It was great! Got an A on my math test.',
-    timestamp: new Date(Date.now() - 300000).toISOString(),
-    isBlocked: false,
-    deviceId: '1',
-  },
-  {
-    id: '3',
-    type: 'received',
-    contact: {
-      name: 'Unknown',
-      number: '+0987654321',
-    },
-    content: 'Hey, check out this cool website!',
-    timestamp: new Date(Date.now() - 3600000).toISOString(),
-    isBlocked: true,
-    deviceId: '1',
-  },
+const filterOptions = [
+  { value: 'all', label: 'All' },
+  { value: 'sent', label: 'Sent' },
+  { value: 'received', label: 'Received' },
 ];
 
-export default function MessagesScreen() {
-  const [messages, setMessages] = useState<MessageEntry[]>(mockMessages);
-  const [filter, setFilter] = useState<'all' | 'sent' | 'received' | 'blocked'>('all');
-  const [loading, setLoading] = useState(true);
-  const [devices, setDevices] = useState<Record<string, string>>({});
+const MessagesScreen: React.FC = () => {
+  const router = useRouter();
+  const { messages, isLoading, error, refreshData } = useCommunicationMonitoring();
+  const [filter, setFilter] = useState<MessageFilter>('all');
+  const [timeRange, setTimeRange] = useState<TimeRange>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [hasPermission, setHasPermission] = useState(false);
 
   useEffect(() => {
-    loadData();
+    checkPermissions();
   }, []);
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      // Load devices to map device IDs to names
-      const deviceList = await DeviceManagementService.getChildDevices();
-      const deviceMap = deviceList.reduce((acc, device) => {
-        acc[device.id] = device.name;
-        return acc;
-      }, {} as Record<string, string>);
-      setDevices(deviceMap);
-
-      // In a real implementation, we would load actual messages here
-      // const msgs = await MessagesService.getMessages();
-      // setMessages(msgs);
-      
-      // Using mock data for now
-      setMessages(mockMessages);
-    } catch (error) {
-      console.error('Error loading data:', error);
-      Alert.alert('Error', 'Failed to load messages');
-    } finally {
-      setLoading(false);
+  const checkPermissions = async () => {
+    const permissions = await PermissionsService.checkCommunicationPermissions();
+    if (!permissions.messages) {
+      const result = await PermissionsService.requestCommunicationPermissions();
+      setHasPermission(result.messages);
+    } else {
+      setHasPermission(true);
     }
   };
 
-  const handleToggleBlocked = async (messageId: string) => {
-    try {
-      const updatedMessages = messages.map(msg =>
-        msg.id === messageId ? { ...msg, isBlocked: !msg.isBlocked } : msg
-      );
-      setMessages(updatedMessages);
-      
-      // In a real implementation, we would update the server here
-      // await MessagesService.toggleMessageBlocked(messageId);
-      
-      Alert.alert(
-        'Success',
-        'Message status updated successfully'
-      );
-    } catch (error) {
-      console.error('Error toggling message blocked status:', error);
-      Alert.alert('Error', 'Failed to update message status');
-    }
-  };
-
-  const getFilteredMessages = () => {
-    switch (filter) {
+  const renderMessageIcon = useCallback((type: string) => {
+    switch (type) {
       case 'sent':
-        return messages.filter(msg => msg.type === 'sent');
+        return <IconSymbol name="message.fill" size={24} color={Colors.light.primary} />;
       case 'received':
-        return messages.filter(msg => msg.type === 'received');
-      case 'blocked':
-        return messages.filter(msg => msg.isBlocked);
+        return <IconSymbol name="message" size={24} color={Colors.light.success} />;
       default:
-        return messages;
+        return <IconSymbol name="message.circle" size={24} color={Colors.light.text} />;
     }
-  };
+  }, []);
 
-  if (loading) {
+  const renderItem = useCallback(({ item }) => {
+    if (!item) return null;
+    
     return (
-      <ThemedView style={[styles.container, styles.centerContent]}>
-        <ActivityIndicator size="large" color={Colors.light.primary} />
+      <TouchableOpacity
+        style={styles.messageItem}
+        onPress={() => router.push(`/messages/${item.id}`)}
+      >
+        <View style={styles.iconContainer}>
+          {renderMessageIcon(item.type)}
+        </View>
+        <View style={styles.messageInfo}>
+          <ThemedText style={styles.number}>{item.number}</ThemedText>
+          <ThemedText style={styles.preview} numberOfLines={2}>
+            {item.preview}
+          </ThemedText>
+          <ThemedText style={styles.timestamp}>
+            {new Date(item.timestamp).toLocaleString()}
+          </ThemedText>
+        </View>
+      </TouchableOpacity>
+    );
+  }, [renderMessageIcon, router]);
+
+  if (!hasPermission) {
+    return (
+      <ThemedView style={styles.container}>
+        <Stack.Screen options={{ title: 'Messages' }} />
+        <View style={styles.centerContent}>
+          <IconSymbol name="lock" size={48} color={Colors.light.error} />
+          <ThemedText style={styles.errorText}>
+            Permission to access messages is required
+          </ThemedText>
+          <TouchableOpacity
+            style={styles.permissionButton}
+            onPress={checkPermissions}
+          >
+            <ThemedText style={styles.permissionButtonText}>
+              Grant Permission
+            </ThemedText>
+          </TouchableOpacity>
+        </View>
       </ThemedView>
     );
   }
 
-  const filteredMessages = getFilteredMessages();
+  if (error) {
+    return (
+      <ThemedView style={styles.container}>
+        <Stack.Screen options={{ title: 'Messages' }} />
+        <View style={styles.centerContent}>
+          <IconSymbol name="exclamationmark.triangle" size={48} color={Colors.light.error} />
+          <ThemedText style={styles.errorText}>{error}</ThemedText>
+        </View>
+      </ThemedView>
+    );
+  }
+
+  const filteredMessages = CommunicationFilters.filterMessages(messages, filter, timeRange, searchQuery);
+  const sortedMessages = CommunicationFilters.sortCommunicationItems(filteredMessages, 'desc');
 
   return (
     <ThemedView style={styles.container}>
       <Stack.Screen
         options={{
           title: 'Messages',
-          headerTitleStyle: {
-            fontWeight: 'bold',
-          },
+          headerRight: () => (
+            isLoading ? (
+              <ActivityIndicator color={Colors.light.tint} style={styles.headerLoader} />
+            ) : null
+          ),
         }}
       />
 
-      <View style={styles.filterContainer}>
-        {(['all', 'sent', 'received', 'blocked'] as const).map((type) => (
-          <TouchableOpacity
-            key={type}
-            style={[styles.filterButton, filter === type && styles.filterButtonActive]}
-            onPress={() => setFilter(type)}
-          >
-            <ThemedText
-              style={[
-                styles.filterButtonText,
-                filter === type && styles.filterButtonTextActive,
-              ]}
-            >
-              {type.charAt(0).toUpperCase() + type.slice(1)}
-            </ThemedText>
-          </TouchableOpacity>
-        ))}
-      </View>
+      <SearchBar
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+        placeholder="Search messages..."
+      />
 
-      <ScrollView style={styles.content}>
-        {filteredMessages.length === 0 ? (
-          <View style={styles.emptyState}>
-            <IconSymbol name="message" size={64} color={Colors.light.primary} />
-            <ThemedText style={styles.emptyStateTitle}>No Messages</ThemedText>
-            <ThemedText style={styles.emptyStateText}>
-              There are no messages matching your filter
-            </ThemedText>
-          </View>
-        ) : (
-          filteredMessages.map((message) => (
-            <View key={message.id} style={styles.messageCard}>
-              <View style={styles.messageHeader}>
-                <View style={styles.contactInfo}>
-                  <ThemedText style={styles.contactName}>
-                    {message.contact.name || 'Unknown'}
-                  </ThemedText>
-                  <ThemedText style={styles.contactNumber}>
-                    {message.contact.number}
-                  </ThemedText>
-                </View>
-                <TouchableOpacity
-                  style={[
-                    styles.blockButton,
-                    message.isBlocked && styles.unblockButton,
-                  ]}
-                  onPress={() => handleToggleBlocked(message.id)}
-                >
-                  <IconSymbol
-                    name={message.isBlocked ? 'shield.slash' : 'shield'}
-                    size={16}
-                    color={message.isBlocked ? '#ff3b30' : Colors.light.primary}
-                  />
-                  <ThemedText
-                    style={[
-                      styles.blockButtonText,
-                      message.isBlocked && styles.unblockButtonText,
-                    ]}
-                  >
-                    {message.isBlocked ? 'Unblock' : 'Block'}
-                  </ThemedText>
-                </TouchableOpacity>
-              </View>
+      <FilterBar
+        options={filterOptions}
+        selectedFilter={filter}
+        onFilterChange={(value) => setFilter(value as MessageFilter)}
+      />
 
-              <View style={styles.messageContent}>
-                <View
-                  style={[
-                    styles.messageBubble,
-                    message.type === 'sent'
-                      ? styles.sentBubble
-                      : styles.receivedBubble,
-                  ]}
-                >
-                  <ThemedText
-                    style={[
-                      styles.messageText,
-                      message.type === 'sent'
-                        ? styles.sentText
-                        : styles.receivedText,
-                    ]}
-                  >
-                    {message.content}
-                  </ThemedText>
-                </View>
-              </View>
+      <TimeRangeSelector
+        selectedRange={timeRange}
+        onRangeChange={setTimeRange}
+      />
 
-              <View style={styles.messageFooter}>
-                <ThemedText style={styles.timestamp}>
-                  {new Date(message.timestamp).toLocaleString()}
-                </ThemedText>
-                <ThemedText style={styles.deviceName}>
-                  {devices[message.deviceId] || 'Unknown Device'}
-                </ThemedText>
-              </View>
-            </View>
-          ))
-        )}
-      </ScrollView>
+      {sortedMessages.length === 0 ? (
+        <View style={styles.centerContent}>
+          <IconSymbol name="message.slash" size={48} color={Colors.light.text} />
+          <ThemedText style={styles.emptyText}>No messages found</ThemedText>
+        </View>
+      ) : (
+        <FlatList
+          data={sortedMessages}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl
+              refreshing={isLoading}
+              onRefresh={refreshData}
+              tintColor={Colors.light.tint}
+            />
+          }
+        />
+      )}
     </ThemedView>
   );
-}
+};
+
+export default MessagesScreen;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  centerContent: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  content: {
-    flex: 1,
+  list: {
     padding: 16,
   },
-  filterContainer: {
+  messageItem: {
     flexDirection: 'row',
-    padding: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  filterButton: {
-    flex: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    marginHorizontal: 4,
-    alignItems: 'center',
-  },
-  filterButtonActive: {
-    backgroundColor: Colors.light.primary + '10',
-  },
-  filterButtonText: {
-    fontSize: 14,
-    color: '#666',
-  },
-  filterButtonTextActive: {
-    color: Colors.light.primary,
-    fontWeight: '600',
-  },
-  messageCard: {
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 16,
-    marginBottom: 16,
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -302,99 +191,63 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  messageHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginRight: 16,
   },
-  contactInfo: {
+  messageInfo: {
     flex: 1,
   },
-  contactName: {
+  number: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 2,
+    marginBottom: 4,
   },
-  contactNumber: {
+  preview: {
     fontSize: 14,
     color: '#666',
-  },
-  blockButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: Colors.light.primary + '10',
-  },
-  unblockButton: {
-    backgroundColor: '#ff3b3010',
-  },
-  blockButtonText: {
-    fontSize: 12,
-    marginLeft: 4,
-    color: Colors.light.primary,
-    fontWeight: '500',
-  },
-  unblockButtonText: {
-    color: '#ff3b30',
-  },
-  messageContent: {
-    marginBottom: 12,
-  },
-  messageBubble: {
-    maxWidth: '80%',
-    padding: 12,
-    borderRadius: 16,
-  },
-  sentBubble: {
-    alignSelf: 'flex-end',
-    backgroundColor: Colors.light.primary,
-    borderBottomRightRadius: 4,
-  },
-  receivedBubble: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#f5f5f5',
-    borderBottomLeftRadius: 4,
-  },
-  messageText: {
-    fontSize: 16,
-  },
-  sentText: {
-    color: '#fff',
-  },
-  receivedText: {
-    color: '#000',
-  },
-  messageFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    marginBottom: 8,
   },
   timestamp: {
     fontSize: 12,
-    color: '#666',
+    color: '#999',
   },
-  deviceName: {
-    fontSize: 12,
-    color: Colors.light.primary,
-  },
-  emptyState: {
+  centerContent: {
     flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
-    padding: 32,
+    alignItems: 'center',
+    padding: 16,
   },
-  emptyStateTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptyStateText: {
+  errorText: {
     fontSize: 16,
-    color: '#666',
     textAlign: 'center',
+    marginTop: 16,
+    color: Colors.light.error,
+  },
+  emptyText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 16,
+    color: Colors.light.text,
+  },
+  permissionButton: {
+    marginTop: 16,
+    backgroundColor: Colors.light.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  permissionButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  headerLoader: {
+    marginRight: 16,
   },
 });

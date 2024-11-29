@@ -33,3 +33,6 @@ export interface Device {
     }>;
   };
 }
+
+export type DeviceStatus = Device['status'];
+export type DeviceRestrictions = Device['restrictions'];

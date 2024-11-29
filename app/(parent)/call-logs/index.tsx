@@ -1,301 +1,262 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, View, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { Stack } from 'expo-router';
+import React, { useCallback, useState, useEffect } from 'react';
+import { StyleSheet, View, FlatList, RefreshControl, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { Stack, useRouter } from 'expo-router';
+import { IconSymbol } from '@/components/ui/IconSymbol';
 import ThemedText from '@/components/ThemedText';
 import ThemedView from '@/components/ThemedView';
-import { IconSymbol } from '@/components/ui/IconSymbol';
+import useCommunicationMonitoring from '@/hooks/useCommunicationMonitoring';
+import FilterBar from '@/components/communication/FilterBar';
+import SearchBar from '@/components/communication/SearchBar';
+import TimeRangeSelector from '@/components/communication/TimeRangeSelector';
+import CommunicationFilters from '@/utils/communication-filters';
+import type { CallFilter, TimeRange } from '@/utils/communication-filters';
+import PermissionsService from '@/services/permissions.service';
 import Colors from '@/constants/Colors';
-import DeviceManagementService from '@/services/device-management.service';
 
-export type CallLogEntry = {
-  id: string;
-  name: string;
-  number: string;
-  type: 'incoming' | 'outgoing' | 'missed';
-  duration: number; // in seconds
-  timestamp: string;
-  deviceId: string;
-};
-
-const mockCallLogs: CallLogEntry[] = [
-  {
-    id: '1',
-    name: 'Mom',
-    number: '+1234567890',
-    type: 'incoming',
-    duration: 120,
-    timestamp: new Date().toISOString(),
-    deviceId: '1',
-  },
-  {
-    id: '2',
-    name: 'Unknown',
-    number: '+0987654321',
-    type: 'missed',
-    duration: 0,
-    timestamp: new Date(Date.now() - 3600000).toISOString(),
-    deviceId: '1',
-  },
-  {
-    id: '3',
-    name: 'Friend',
-    number: '+1122334455',
-    type: 'outgoing',
-    duration: 300,
-    timestamp: new Date(Date.now() - 7200000).toISOString(),
-    deviceId: '1',
-  },
+const filterOptions = [
+  { value: 'all', label: 'All' },
+  { value: 'incoming', label: 'Incoming' },
+  { value: 'outgoing', label: 'Outgoing' },
+  { value: 'missed', label: 'Missed' },
 ];
 
-export default function CallLogsScreen() {
-  const [calls, setCalls] = useState<CallLogEntry[]>(mockCallLogs);
-  const [filter, setFilter] = useState<'all' | 'incoming' | 'outgoing' | 'missed'>('all');
-  const [loading, setLoading] = useState(true);
-  const [devices, setDevices] = useState<Record<string, string>>({});
+const CallLogsScreen: React.FC = () => {
+  const router = useRouter();
+  const { callLogs, isLoading, error, refreshData } = useCommunicationMonitoring();
+  const [filter, setFilter] = useState<CallFilter>('all');
+  const [timeRange, setTimeRange] = useState<TimeRange>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [hasPermission, setHasPermission] = useState(false);
 
   useEffect(() => {
-    loadData();
+    checkPermissions();
   }, []);
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      // Load devices to map device IDs to names
-      const deviceList = await DeviceManagementService.getChildDevices();
-      const deviceMap = deviceList.reduce((acc, device) => {
-        acc[device.id] = device.name;
-        return acc;
-      }, {} as Record<string, string>);
-      setDevices(deviceMap);
-
-      // In a real implementation, we would load actual call logs here
-      // const logs = await CallLogsService.getLogs();
-      // setCalls(logs);
-      
-      // Using mock data for now
-      setCalls(mockCallLogs);
-    } catch (error) {
-      console.error('Error loading data:', error);
-    } finally {
-      setLoading(false);
+  const checkPermissions = async () => {
+    const permissions = await PermissionsService.checkCommunicationPermissions();
+    if (!permissions.callLogs) {
+      const result = await PermissionsService.requestCommunicationPermissions();
+      setHasPermission(result.callLogs);
+    } else {
+      setHasPermission(true);
     }
   };
 
-  const getCallIcon = (type: CallLogEntry['type']) => {
+  const renderCallIcon = useCallback((type: string) => {
     switch (type) {
       case 'incoming':
-        return 'arrow.down.left.circle.fill';
+        return <IconSymbol name="phone.arrow.down.left" size={24} color={Colors.light.success} />;
       case 'outgoing':
-        return 'arrow.up.right.circle.fill';
+        return <IconSymbol name="phone.arrow.up.right" size={24} color={Colors.light.primary} />;
       case 'missed':
-        return 'xmark.circle.fill';
+        return <IconSymbol name="phone.down" size={24} color={Colors.light.error} />;
       default:
-        return 'phone.circle.fill';
+        return <IconSymbol name="phone" size={24} color={Colors.light.text} />;
     }
-  };
+  }, []);
 
-  const getCallColor = (type: CallLogEntry['type']) => {
-    switch (type) {
-      case 'incoming':
-        return '#34c759';
-      case 'outgoing':
-        return Colors.light.primary;
-      case 'missed':
-        return '#ff3b30';
-      default:
-        return '#666';
-    }
-  };
+  const renderItem = useCallback(({ item }) => (
+    <TouchableOpacity
+      style={styles.callItem}
+      onPress={() => router.push(`/call-logs/${item.id}`)}
+    >
+      <View style={styles.iconContainer}>
+        {renderCallIcon(item.type)}
+      </View>
+      <View style={styles.callInfo}>
+        <ThemedText style={styles.name}>{item.name || 'Unknown'}</ThemedText>
+        <ThemedText style={styles.number}>{item.number}</ThemedText>
+        <View style={styles.callDetails}>
+          <ThemedText style={styles.timestamp}>
+            {new Date(item.timestamp).toLocaleString()}
+          </ThemedText>
+          <ThemedText style={styles.duration}>{item.duration}</ThemedText>
+        </View>
+      </View>
+    </TouchableOpacity>
+  ), [renderCallIcon, router]);
 
-  const formatDuration = (seconds: number) => {
-    if (seconds === 0) return 'No duration';
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-  };
-
-  const filteredCalls = calls.filter(
-    (call) => filter === 'all' || call.type === filter
-  );
-
-  if (loading) {
+  if (!hasPermission) {
     return (
-      <ThemedView style={[styles.container, styles.centerContent]}>
-        <ActivityIndicator size="large" color={Colors.light.primary} />
+      <ThemedView style={styles.container}>
+        <Stack.Screen options={{ title: 'Call Logs' }} />
+        <View style={styles.centerContent}>
+          <IconSymbol name="lock" size={48} color={Colors.light.error} />
+          <ThemedText style={styles.errorText}>
+            Permission to access call logs is required
+          </ThemedText>
+          <TouchableOpacity
+            style={styles.permissionButton}
+            onPress={checkPermissions}
+          >
+            <ThemedText style={styles.permissionButtonText}>
+              Grant Permission
+            </ThemedText>
+          </TouchableOpacity>
+        </View>
       </ThemedView>
     );
   }
+
+  if (error) {
+    return (
+      <ThemedView style={styles.container}>
+        <Stack.Screen options={{ title: 'Call Logs' }} />
+        <View style={styles.centerContent}>
+          <IconSymbol name="exclamationmark.triangle" size={48} color={Colors.light.error} />
+          <ThemedText style={styles.errorText}>{error}</ThemedText>
+        </View>
+      </ThemedView>
+    );
+  }
+
+  const filteredCalls = CommunicationFilters.filterCalls(callLogs, filter, timeRange, searchQuery);
+  const sortedCalls = CommunicationFilters.sortCommunicationItems(filteredCalls, 'desc');
 
   return (
     <ThemedView style={styles.container}>
       <Stack.Screen
         options={{
           title: 'Call Logs',
-          headerTitleStyle: {
-            fontWeight: 'bold',
-          },
+          headerRight: () => (
+            isLoading ? (
+              <ActivityIndicator color={Colors.light.tint} style={styles.headerLoader} />
+            ) : null
+          ),
         }}
       />
 
-      <View style={styles.filterContainer}>
-        {(['all', 'incoming', 'outgoing', 'missed'] as const).map((type) => (
-          <TouchableOpacity
-            key={type}
-            style={[styles.filterButton, filter === type && styles.filterButtonActive]}
-            onPress={() => setFilter(type)}
-          >
-            <ThemedText
-              style={[
-                styles.filterButtonText,
-                filter === type && styles.filterButtonTextActive,
-              ]}
-            >
-              {type.charAt(0).toUpperCase() + type.slice(1)}
-            </ThemedText>
-          </TouchableOpacity>
-        ))}
-      </View>
+      <SearchBar
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+        placeholder="Search calls..."
+      />
 
-      <ScrollView style={styles.content}>
-        {filteredCalls.length === 0 ? (
-          <View style={styles.emptyState}>
-            <IconSymbol name="phone" size={64} color={Colors.light.primary} />
-            <ThemedText style={styles.emptyStateTitle}>No Call Logs</ThemedText>
-            <ThemedText style={styles.emptyStateText}>
-              There are no call logs matching your filter
-            </ThemedText>
-          </View>
-        ) : (
-          filteredCalls.map((call) => (
-            <View key={call.id} style={styles.callItem}>
-              <View style={styles.callIcon}>
-                <IconSymbol
-                  name={getCallIcon(call.type)}
-                  size={24}
-                  color={getCallColor(call.type)}
-                />
-              </View>
-              <View style={styles.callInfo}>
-                <ThemedText style={styles.callName}>{call.name || 'Unknown'}</ThemedText>
-                <ThemedText style={styles.callNumber}>{call.number}</ThemedText>
-                <View style={styles.callDetails}>
-                  <ThemedText style={styles.callTime}>
-                    {new Date(call.timestamp).toLocaleString()}
-                  </ThemedText>
-                  <ThemedText style={styles.callDuration}>
-                    {formatDuration(call.duration)}
-                  </ThemedText>
-                </View>
-                <ThemedText style={styles.deviceName}>
-                  {devices[call.deviceId] || 'Unknown Device'}
-                </ThemedText>
-              </View>
-            </View>
-          ))
-        )}
-      </ScrollView>
+      <FilterBar
+        options={filterOptions}
+        selectedFilter={filter}
+        onFilterChange={(value) => setFilter(value as CallFilter)}
+      />
+
+      <TimeRangeSelector
+        selectedRange={timeRange}
+        onRangeChange={setTimeRange}
+      />
+      
+      {sortedCalls.length === 0 ? (
+        <View style={styles.centerContent}>
+          <IconSymbol name="phone.slash" size={48} color={Colors.light.text} />
+          <ThemedText style={styles.emptyText}>No call logs found</ThemedText>
+        </View>
+      ) : (
+        <FlatList
+          data={sortedCalls}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl
+              refreshing={isLoading}
+              onRefresh={refreshData}
+              tintColor={Colors.light.tint}
+            />
+          }
+        />
+      )}
     </ThemedView>
   );
-}
+};
+
+export default CallLogsScreen;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  centerContent: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  content: {
-    flex: 1,
-  },
-  filterContainer: {
-    flexDirection: 'row',
+  list: {
     padding: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  filterButton: {
-    flex: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    marginHorizontal: 4,
-    alignItems: 'center',
-  },
-  filterButtonActive: {
-    backgroundColor: Colors.light.primary + '10',
-  },
-  filterButtonText: {
-    fontSize: 14,
-    color: '#666',
-  },
-  filterButtonTextActive: {
-    color: Colors.light.primary,
-    fontWeight: '600',
   },
   callItem: {
     flexDirection: 'row',
-    padding: 16,
     backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  callIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: '#f5f5f5',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 16,
   },
   callInfo: {
     flex: 1,
   },
-  callName: {
+  name: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 2,
+    marginBottom: 4,
   },
-  callNumber: {
+  number: {
     fontSize: 14,
     color: '#666',
-    marginBottom: 4,
+    marginBottom: 8,
   },
   callDetails: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  callTime: {
-    fontSize: 12,
-    color: '#666',
-  },
-  callDuration: {
-    fontSize: 12,
-    color: '#666',
-  },
-  deviceName: {
-    fontSize: 12,
-    color: Colors.light.primary,
-  },
-  emptyState: {
-    flex: 1,
     alignItems: 'center',
+  },
+  timestamp: {
+    fontSize: 12,
+    color: '#999',
+  },
+  duration: {
+    fontSize: 12,
+    color: '#666',
+  },
+  centerContent: {
+    flex: 1,
     justifyContent: 'center',
-    padding: 32,
+    alignItems: 'center',
+    padding: 16,
   },
-  emptyStateTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptyStateText: {
+  emptyText: {
     fontSize: 16,
     color: '#666',
+    marginTop: 16,
     textAlign: 'center',
+  },
+  errorText: {
+    fontSize: 16,
+    color: Colors.light.error,
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  headerLoader: {
+    marginRight: 16,
+  },
+  permissionButton: {
+    marginTop: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    backgroundColor: Colors.light.primary,
+    borderRadius: 8,
+  },
+  permissionButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

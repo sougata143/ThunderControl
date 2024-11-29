@@ -1,40 +1,18 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Device as DeviceType } from '@/types/device';
+import { Device } from '@/types/device';
 import * as ExpoDevice from 'expo-device';
 import * as Battery from 'expo-battery';
 import * as Location from 'expo-location';
 
-export interface ChildDevice {
-  id: string;
-  name: string;
-  deviceModel: string;
-  platform: 'ios' | 'android';
-  status: 'online' | 'offline';
-  batteryLevel: number;
-  lastSeen: string;
-  location?: {
-    latitude: number;
-    longitude: number;
-    timestamp: string;
-  };
-  restrictions: {
-    appUsageLimits: boolean;
-    contentFiltering: boolean;
-    screenTime: boolean;
-    appInstallation: boolean;
-  };
-}
-
 interface AddDeviceParams {
   name: string;
   deviceModel: string;
-  platform: 'ios' | 'android';
 }
 
 class DeviceManagementService {
   private readonly DEVICES_STORAGE_KEY = '@thunder_control:devices';
 
-  async addChildDevice(params: AddDeviceParams): Promise<ChildDevice> {
+  async addChildDevice(params: AddDeviceParams): Promise<Device> {
     const batteryLevel = await Battery.getBatteryLevelAsync();
     const { status } = await Location.requestForegroundPermissionsAsync();
     let location;
@@ -48,79 +26,62 @@ class DeviceManagementService {
       };
     }
 
-    const newDevice: ChildDevice = {
-      id: Date.now().toString(),
+    const newDevice: Device = {
+      id: Math.random().toString(36).substring(7),
       name: params.name,
       deviceModel: params.deviceModel,
-      platform: params.platform,
-      status: 'offline', // Start as offline until device connects
-      batteryLevel: batteryLevel || 1, // Default to 100% if not available
+      status: 'online',
+      batteryLevel: batteryLevel * 100,
       lastSeen: new Date().toISOString(),
       location,
       restrictions: {
-        appUsageLimits: false,
-        contentFiltering: true,
-        screenTime: false,
-        appInstallation: true,
+        screenTimeLimit: 120, // 2 hours default
+        appRestrictions: {},
+        contentFiltering: {
+          webFiltering: true,
+          explicitContentBlocking: true,
+          ageRestriction: 13,
+        },
+        schedules: [],
       },
     };
 
-    const existingDevices = await this.getChildDevices();
-    await AsyncStorage.setItem(
-      this.DEVICES_STORAGE_KEY,
-      JSON.stringify([...existingDevices, newDevice])
-    );
+    const devices = await this.getChildDevices();
+    devices.push(newDevice);
+    await AsyncStorage.setItem(this.DEVICES_STORAGE_KEY, JSON.stringify(devices));
 
     return newDevice;
   }
 
-  async getChildDevices(): Promise<ChildDevice[]> {
-    const devices = await AsyncStorage.getItem(this.DEVICES_STORAGE_KEY);
-    return devices ? JSON.parse(devices) : [];
+  async getChildDevices(): Promise<Device[]> {
+    try {
+      const devicesJson = await AsyncStorage.getItem(this.DEVICES_STORAGE_KEY);
+      return devicesJson ? JSON.parse(devicesJson) : [];
+    } catch (error) {
+      console.error('Error getting devices:', error);
+      return [];
+    }
   }
 
-  async updateDeviceStatus(deviceId: string, status: 'online' | 'offline'): Promise<void> {
+  async updateDeviceStatus(deviceId: string, isOnline: boolean): Promise<void> {
     const devices = await this.getChildDevices();
-    const updatedDevices = devices.map(device => 
-      device.id === deviceId 
-        ? { ...device, status, lastSeen: new Date().toISOString() }
-        : device
-    );
-
-    await AsyncStorage.setItem(
-      this.DEVICES_STORAGE_KEY,
-      JSON.stringify(updatedDevices)
-    );
+    const deviceIndex = devices.findIndex(d => d.id === deviceId);
+    
+    if (deviceIndex !== -1) {
+      devices[deviceIndex].status = isOnline ? 'online' : 'offline';
+      devices[deviceIndex].lastSeen = new Date().toISOString();
+      await AsyncStorage.setItem(this.DEVICES_STORAGE_KEY, JSON.stringify(devices));
+    }
   }
 
-  async updateDeviceRestrictions(
-    deviceId: string,
-    restrictions: Partial<ChildDevice['restrictions']>
-  ): Promise<void> {
+  async updateDeviceRestrictions(deviceId: string, restrictions: Device['restrictions']): Promise<void> {
     const devices = await this.getChildDevices();
-    const updatedDevices = devices.map(device =>
-      device.id === deviceId
-        ? {
-            ...device,
-            restrictions: { ...device.restrictions, ...restrictions },
-          }
-        : device
-    );
-
-    await AsyncStorage.setItem(
-      this.DEVICES_STORAGE_KEY,
-      JSON.stringify(updatedDevices)
-    );
-  }
-
-  async removeDevice(deviceId: string): Promise<void> {
-    const devices = await this.getChildDevices();
-    const updatedDevices = devices.filter(device => device.id !== deviceId);
-
-    await AsyncStorage.setItem(
-      this.DEVICES_STORAGE_KEY,
-      JSON.stringify(updatedDevices)
-    );
+    const deviceIndex = devices.findIndex(d => d.id === deviceId);
+    
+    if (deviceIndex !== -1) {
+      devices[deviceIndex].restrictions = restrictions;
+      await AsyncStorage.setItem(this.DEVICES_STORAGE_KEY, JSON.stringify(devices));
+    }
   }
 }
 

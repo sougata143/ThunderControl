@@ -1,3 +1,6 @@
+import { Tabs } from 'expo-router';
+import { IconSymbol } from '@/components/ui/IconSymbol';
+import Colors from '@/constants/Colors';
 import { Stack } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
@@ -15,73 +18,47 @@ export default function ParentLayout() {
   }
 
   return (
-    <Stack
+    <Tabs
       screenOptions={{
-        headerStyle: {
-          backgroundColor: '#f5f5f5',
-        },
-        headerTintColor: '#000',
-        headerTitleStyle: {
-          fontWeight: 'bold',
-        },
-        headerBackTitleVisible: false,
+        tabBarActiveTintColor: Colors.light.tint,
+        tabBarInactiveTintColor: Colors.light.tabIconDefault,
       }}
     >
-      <Stack.Screen
+      <Tabs.Screen
         name="index"
         options={{
           title: 'Dashboard',
-          headerShown: false
+          tabBarIcon: ({ color }) => <IconSymbol name="chart.bar" color={color} size={24} />,
         }}
       />
-      <Stack.Screen
-        name="location"
-        options={{
-          title: 'Location Tracking'
-        }}
-      />
-      <Stack.Screen
-        name="call-logs"
-        options={{
-          title: 'Call Logs'
-        }}
-      />
-      <Stack.Screen
-        name="messages"
-        options={{
-          title: 'Messages'
-        }}
-      />
-      <Stack.Screen
+      <Tabs.Screen
         name="devices"
         options={{
-          title: 'Devices'
+          title: 'Devices',
+          tabBarIcon: ({ color }) => <IconSymbol name="iphone" color={color} size={24} />,
         }}
       />
-      <Stack.Screen
-        name="device-restrictions"
+      <Tabs.Screen
+        name="call-logs"
         options={{
-          title: 'Restrictions'
+          title: 'Calls',
+          tabBarIcon: ({ color }) => <IconSymbol name="phone" color={color} size={24} />,
         }}
       />
-      <Stack.Screen
+      <Tabs.Screen
+        name="messages"
+        options={{
+          title: 'Messages',
+          tabBarIcon: ({ color }) => <IconSymbol name="message" color={color} size={24} />,
+        }}
+      />
+      <Tabs.Screen
         name="reports"
         options={{
-          title: 'Reports'
+          title: 'Reports',
+          tabBarIcon: ({ color }) => <IconSymbol name="doc.text" color={color} size={24} />,
         }}
       />
-      <Stack.Screen
-        name="settings"
-        options={{
-          title: 'Settings'
-        }}
-      />
-      <Stack.Screen
-        name="profile"
-        options={{
-          title: 'Profile'
-        }}
-      />
-    </Stack>
+    </Tabs>
   );
 }
